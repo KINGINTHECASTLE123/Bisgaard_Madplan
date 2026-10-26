@@ -8,7 +8,7 @@
 En agent, der laver en ugentlig madplan ud fra mine yndlingsopskrifter fra valdemarsro.dk,
 prioriterer retter med ingredienser på tilbud (Prej API) og lærer af mine ratings.
 
-- **Vektor** finder opskrifter på stemning og beskrivelse ("noget cremet og hurtigt").
+- **Vektor** finder opskrifter på stemning og beskrivelse ("noget sundt og hurtigt", "ligner lasagnen jeg gav 5 stjerner").
 - **Graf** kender sammenhængene: opskrift → kategori/tags → ingredienser → produkter på tilbud i kæder, og hvad jeg har spist og ratet.
 
 ## Mappestruktur
@@ -46,7 +46,7 @@ n8n når Ollama på Mac'en via `http://host.docker.internal:11434`.
 
 ### 3. n8n
 1. Importér `n8n/01_ingest_opskrifter.json`.
-2. Opret credential af typen **Basic Auth** (navn: `Neo4j lokal`, bruger `neo4j`, din adgangskode) og vælg den i noden **Skriv til Neo4j**.
+2. Opret credential af typen **Basic Auth** (navn: `Neo4j lokal`, bruger `neo4j`, din adgangskode). Workflowet peger på credentialens id (`NEO4J_CREDENTIAL` i `src/build_workflow.js`) – ret id'et dér og kør `npm run build`, eller vælg credentialen i noden **Skriv til Neo4j** efter import.
 3. Skriv dine opskrifts-URL'er i noden **Opskrift-links**.
 4. Kør workflowet.
 

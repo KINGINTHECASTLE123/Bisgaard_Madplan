@@ -13,6 +13,9 @@ const lib = fs
 const EMBED_MODEL = 'nomic-embed-text';
 const OLLAMA_URL = 'http://host.docker.internal:11434/api/embed';
 const NEO4J_URL = 'http://neo4j:7474/db/neo4j/tx/commit';
+// n8n-credential (Basic Auth) til Neo4j. Id'et er ikke hemmeligt – det peger bare på credentialen
+// i din egen n8n. Genskaber man projektet, oprettes en Basic Auth-credential med samme navn og id'et rettes her.
+const NEO4J_CREDENTIAL = { id: 'W2oqfWpLx0Y5eXtI', name: 'Neo4j lokal' };
 const USER_AGENT = 'KEA-studieprojekt madplan-agent (kontakt: jacbisgaard@hotmail.com)';
 
 const RECIPE_CYPHER = `MERGE (r:Recipe {url: $url})
@@ -70,11 +73,13 @@ CREATE (c)-[:CHUNK_OF]->(r)`;
 // ingestion er ligegyldig. Idempotent (MERGE).
 const LINK_SERVED_CYPHER = `MATCH (a:Recipe), (b:Recipe)
 WHERE a <> b AND b.url IN coalesce(a.serveWith, [])
-MERGE (a)-[:SERVED_WITH]->(b)`;
+MERGE (a)-[:SERVED_WITH]->(b)
+RETURN count(*) AS servedWith`;
 
 const LINK_SEE_ALSO_CYPHER = `MATCH (a:Recipe), (b:Recipe)
 WHERE a <> b AND b.url IN coalesce(a.seeAlso, [])
-MERGE (a)-[:SEE_ALSO]->(b)`;
+MERGE (a)-[:SEE_ALSO]->(b)
+RETURN count(*) AS seeAlso`;
 
 // Felter som HTML-noden "Udtræk felter" henter (CSS-selectors på schema.org-microdata m.m.).
 // Bruges også af src/test_parse.js, som efterligner noden med cheerio mod gemte sider.
@@ -98,11 +103,15 @@ const EXTRACTION_VALUES = [
   { key: 'seeAlsoHtml', cssSelector: '#tab2_content .post-list-item-title', returnValue: 'html', returnArray: true },
 ];
 
+// Favoritlisten vedligeholdes i data/favoritter.txt og bages ind i noden "Opskrift-links".
+const FAVORITES = fs.readFileSync(path.join(root, 'data', 'favoritter.txt'), 'utf8')
+  .split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
+
 const code = {
-  links: `// Indsæt dine favoritopskrifter fra valdemarsro.dk her – én URL pr. linje.
-// Dubletter fjernes automatisk, og allerede indlæste opskrifter overskrives (idempotent).
+  links: `// Genereret fra data/favoritter.txt (${FAVORITES.length} opskrifter) – ret listen dér og kør npm run build.
+// Du kan også tilføje URL'er direkte her. Dubletter fjernes, og allerede indlæste opskrifter overskrives (idempotent).
 const urls = [
-  'https://www.valdemarsro.dk/porresuppe/',
+${FAVORITES.map((u) => `  '${u}',`).join('\n')}
 ];
 
 return [...new Set(urls.map((u) => u.trim()).filter(Boolean))]
@@ -123,7 +132,7 @@ for (let i = 0; i < items.length; i++) {
 if (skipped.length) console.log('Sprunget over – ingen opskrift fundet på:', skipped);
 return out;`,
 
-  cypher: `// Kobler embeddings sammen med chunks og bygger én Neo4j-transaktion pr. opskrift.
+  cypher: `// Kobler embeddings sammen med chunks og bygger de to Cypher-statements for én opskrift.
 const base = $('Byg opskrift og chunks').item.json;
 const embeddings = $json.embeddings;
 
@@ -135,33 +144,56 @@ const chunks = base.chunks.map((c, i) => ({ ...c, embedding: embeddings[i] }));
 
 const RECIPE_CYPHER = ${JSON.stringify(RECIPE_CYPHER)};
 const CHUNK_CYPHER = ${JSON.stringify(CHUNK_CYPHER)};
-const LINK_SERVED_CYPHER = ${JSON.stringify(LINK_SERVED_CYPHER)};
-const LINK_SEE_ALSO_CYPHER = ${JSON.stringify(LINK_SEE_ALSO_CYPHER)};
 
 return {
   json: {
     url: base.url,
     title: base.recipe.title,
     chunkCount: chunks.length,
-    body: {
-      statements: [
-        { statement: RECIPE_CYPHER, parameters: { url: base.url, recipe: base.recipe } },
-        { statement: CHUNK_CYPHER, parameters: { url: base.url, chunks, model: ${JSON.stringify(EMBED_MODEL)} } },
-        { statement: LINK_SERVED_CYPHER },
-        { statement: LINK_SEE_ALSO_CYPHER },
-      ],
-    },
+    statements: [
+      { statement: RECIPE_CYPHER, parameters: { url: base.url, recipe: base.recipe } },
+      { statement: CHUNK_CYPHER, parameters: { url: base.url, chunks, model: ${JSON.stringify(EMBED_MODEL)} } },
+    ],
   },
 };`,
 
-  check: `// Neo4j's HTTP API svarer 200 selv når Cypher fejler – fejlene ligger i "errors".
-const src = $('Byg Cypher').item.json;
-const errors = $json.errors || [];
-if (errors.length) {
-  throw new Error(\`Neo4j afviste \${src.url}: \` + errors.map((e) => \`\${e.code}: \${e.message}\`).join(' | '));
-}
-return { json: { status: 'gemt', title: src.title, url: src.url, chunks: src.chunkCount } };`,
 };
+
+// Samler ALLE opskrifter i én transaktion. n8n's HTTP-node sender ellers requests parallelt
+// (batching forsinker kun starten), og parallelle transaktioner på de samme Tag/Category-noder
+// gav DeadlockDetected. Én transaktion = ingen låsekonflikter, og importen er alt-eller-intet.
+// Koblingen SEE_ALSO/SERVED_WITH kører til sidst i samme transaktion, når alle opskrifter findes.
+code.transaction = `const items = $input.all();
+const statements = items.flatMap((i) => i.json.statements);
+statements.push(
+  { statement: ${JSON.stringify(LINK_SERVED_CYPHER)} },
+  { statement: ${JSON.stringify(LINK_SEE_ALSO_CYPHER)} },
+);
+const recipes = items.map((i) => ({ url: i.json.url, title: i.json.title, chunks: i.json.chunkCount }));
+return [{ json: { recipes, body: { statements } } }];`;
+
+// Neo4j's HTTP API svarer 200 selv når Cypher fejler – fejlene ligger i "errors".
+// Ved fejl rulles hele transaktionen tilbage; results indeholder de statements, der nåede at køre,
+// så næste statement er den der fejlede (2 statements pr. opskrift).
+code.check = `const res = $input.first().json;
+const { recipes } = $('Saml transaktion').first().json;
+if (res.errors?.length) {
+  const failed = res.results?.length ?? 0;
+  const r = recipes[Math.floor(failed / 2)];
+  const where = r ? \`opskrift "\${r.title}" (\${r.url})\` : 'koblingen af relaterede opskrifter';
+  throw new Error(\`Neo4j afviste \${where} – intet er gemt. \` + res.errors.map((e) => e.code + ': ' + e.message).join(' | '));
+}
+const n = res.results.length;
+const servedWith = res.results[n - 2].data[0]?.row[0] ?? 0;
+const seeAlso = res.results[n - 1].data[0]?.row[0] ?? 0;
+return [{ json: {
+  status: 'gemt',
+  opskrifter: recipes.length,
+  chunks: recipes.reduce((a, r) => a + r.chunks, 0),
+  SERVED_WITH: servedWith,
+  SEE_ALSO: seeAlso,
+  titler: recipes.map((r) => r.title),
+} }];`;
 
 const id = () => crypto.randomUUID();
 const X = 220;
@@ -172,11 +204,12 @@ const nodes = [
       content:
         '## 01 · Ingestion: opskrifter → Neo4j\n' +
         'Henter opskrifter fra valdemarsro.dk (høfligt: 1 side pr. 3 sek.), udtrækker schema.org-microdata, ' +
-        'deler hver opskrift i chunks (profil / ingredienser / fremgangsmåde), embedder med **' + EMBED_MODEL + '** via Ollama ' +
-        'og skriver både graf (Recipe, Category, Tag) og vektor-chunks til Neo4j i én transaktion.\n\n' +
-        'Kør igen for at opdatere – alt er idempotent (MERGE på URL, gamle chunks slettes).',
+        'deler hver opskrift i chunks (profil / ingredienser / tips / fremgangsmåde), embedder med **' + EMBED_MODEL + '** via Ollama ' +
+        'og skriver graf (Recipe, Category, Tag) og vektor-chunks til Neo4j i **én samlet transaktion** (alt-eller-intet, ingen låsekonflikter).\n\n' +
+        'Til sidst i samme transaktion kobles opskrifterne, der henviser til hinanden: **SEE_ALSO** ("Prøv også") og **SERVED_WITH** ("Forslag til servering").\n\n' +
+        'Kør igen for at opdatere – alt er idempotent (MERGE på URL, gamle chunks og relationer slettes).',
       height: 220,
-      width: 1560,
+      width: 2120,
       color: 4,
     },
     id: id(),
@@ -265,6 +298,14 @@ const nodes = [
     position: [X * 6, 0],
   },
   {
+    parameters: { jsCode: code.transaction },
+    id: id(),
+    name: 'Saml transaktion',
+    type: 'n8n-nodes-base.code',
+    typeVersion: 2,
+    position: [X * 7, 0],
+  },
+  {
     parameters: {
       method: 'POST',
       url: NEO4J_URL,
@@ -276,24 +317,25 @@ const nodes = [
       options: {},
     },
     id: id(),
+    credentials: { httpBasicAuth: NEO4J_CREDENTIAL },
     name: 'Skriv til Neo4j',
     type: 'n8n-nodes-base.httpRequest',
     typeVersion: 4.2,
-    position: [X * 7, 0],
+    position: [X * 8, 0],
   },
   {
-    parameters: { mode: 'runOnceForEachItem', jsCode: code.check },
+    parameters: { jsCode: code.check },
     id: id(),
     name: 'Tjek svar',
     type: 'n8n-nodes-base.code',
     typeVersion: 2,
-    position: [X * 8, 0],
+    position: [X * 9, 0],
   },
 ];
 
 const chain = [
   'Start manuelt', 'Opskrift-links', 'Hent opskriftsside', 'Udtræk felter',
-  'Byg opskrift og chunks', 'Embed chunks (Ollama)', 'Byg Cypher', 'Skriv til Neo4j', 'Tjek svar',
+  'Byg opskrift og chunks', 'Embed chunks (Ollama)', 'Byg Cypher', 'Saml transaktion', 'Skriv til Neo4j', 'Tjek svar',
 ];
 const connections = {};
 for (let i = 0; i < chain.length - 1; i++) {
