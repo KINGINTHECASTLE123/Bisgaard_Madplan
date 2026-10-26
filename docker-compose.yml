@@ -1,0 +1,29 @@
+# Neo4j til madplan-agenten (vektor + graf i samme database).
+# n8n kører i sin egen container – forbind den til netværket "madplan":
+#   docker network connect madplan <navn-på-n8n-container>
+# Så kan n8n nå Neo4j på http://neo4j:7474 (HTTP API) og bolt://neo4j:7687.
+
+services:
+  neo4j:
+    image: neo4j:5.26-community
+    container_name: neo4j
+    restart: unless-stopped
+    ports:
+      - "7474:7474"   # Neo4j Browser + HTTP API
+      - "7687:7687"   # Bolt
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:?Sæt NEO4J_PASSWORD i .env}
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_server_memory_heap_max__size: 1G
+    volumes:
+      - neo4j_data:/data
+      - ./neo4j:/import/cypher:ro
+    networks:
+      - madplan
+
+networks:
+  madplan:
+    name: madplan
+
+volumes:
+  neo4j_data:

@@ -1,0 +1,332 @@
+{
+  "name": "01 · Ingestion – opskrifter til Neo4j",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 01 · Ingestion: opskrifter → Neo4j\nHenter opskrifter fra valdemarsro.dk (høfligt: 1 side pr. 3 sek.), udtrækker schema.org-microdata, deler hver opskrift i chunks (profil / ingredienser / fremgangsmåde), embedder med **nomic-embed-text** via Ollama og skriver både graf (Recipe, Category, Tag) og vektor-chunks til Neo4j i én transaktion.\n\nKør igen for at opdatere – alt er idempotent (MERGE på URL, gamle chunks slettes).",
+        "height": 220,
+        "width": 1560,
+        "color": 4
+      },
+      "id": "fb1a2336-6673-46f2-861c-645699502943",
+      "name": "Beskrivelse",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -300
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "06f073d4-36a5-4558-8b19-c5b28fc5b64f",
+      "name": "Start manuelt",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Indsæt dine favoritopskrifter fra valdemarsro.dk her – én URL pr. linje.\n// Dubletter fjernes automatisk, og allerede indlæste opskrifter overskrives (idempotent).\nconst urls = [\n  'https://www.valdemarsro.dk/porresuppe/',\n];\n\nreturn [...new Set(urls.map((u) => u.trim()).filter(Boolean))]\n  .map((url) => ({ json: { url } }));"
+      },
+      "id": "66686be3-c73f-4add-9063-614973ccc339",
+      "name": "Opskrift-links",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "KEA-studieprojekt madplan-agent (kontakt: jacbisgaard@hotmail.com)"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 3000
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "html"
+            }
+          }
+        }
+      },
+      "id": "68a396b1-e062-4bb4-afe6-772a1b87fe48",
+      "name": "Hent opskriftsside",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "dataPropertyName": "html",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "title",
+              "cssSelector": "h1[itemprop=\"headline\"]"
+            },
+            {
+              "key": "description",
+              "cssSelector": "[itemprop=\"description\"]"
+            },
+            {
+              "key": "category",
+              "cssSelector": "[itemprop=\"recipeCategory\"]"
+            },
+            {
+              "key": "keywords",
+              "cssSelector": "[itemprop=\"keywords\"]"
+            },
+            {
+              "key": "totalTimeContent",
+              "cssSelector": "[itemprop=\"totalTime\"]",
+              "returnValue": "attribute",
+              "attribute": "content"
+            },
+            {
+              "key": "totalTimeText",
+              "cssSelector": "[itemprop=\"totalTime\"]"
+            },
+            {
+              "key": "cookTimeContent",
+              "cssSelector": "[itemprop=\"cookTime\"]",
+              "returnValue": "attribute",
+              "attribute": "content"
+            },
+            {
+              "key": "cookTimeText",
+              "cssSelector": "[itemprop=\"cookTime\"]"
+            },
+            {
+              "key": "servings",
+              "cssSelector": "[itemprop=\"recipeYield\"]"
+            },
+            {
+              "key": "image",
+              "cssSelector": "meta[property=\"og:image\"]",
+              "returnValue": "attribute",
+              "attribute": "content"
+            },
+            {
+              "key": "ingredientLists",
+              "cssSelector": "ul.ingredientlist",
+              "returnValue": "html",
+              "returnArray": true
+            },
+            {
+              "key": "instructionsHtml",
+              "cssSelector": "[itemprop=\"recipeInstructions\"]",
+              "returnValue": "html"
+            }
+          ]
+        },
+        "options": {
+          "trimValues": true
+        }
+      },
+      "id": "bb13399c-34e3-420a-a998-62dd29b71dfb",
+      "name": "Udtræk felter",
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ren logik til n8n-Code-noden \"Byg opskrift og chunks\".\n// Input: felterne fra HTML-noden \"Udtræk felter\" + opskriftens URL.\n// Output: { recipe, chunks } eller null hvis siden ikke er en opskrift.\n\nfunction decodeEntities(s) {\n  const named = {\n    amp: '&', lt: '<', gt: '>', quot: '\"', apos: \"'\", nbsp: ' ',\n    aelig: 'æ', oslash: 'ø', aring: 'å', AElig: 'Æ', Oslash: 'Ø', Aring: 'Å',\n    frac12: '½', frac14: '¼', frac34: '¾', ndash: '–', mdash: '—',\n    rsquo: '’', lsquo: '‘', rdquo: '”', ldquo: '“', hellip: '…', deg: '°',\n  };\n  return String(s ?? '')\n    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))\n    .replace(/&#(\\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))\n    .replace(/&([a-z][a-z0-9]*);/gi, (m, n) => (n in named ? named[n] : m));\n}\n\nfunction htmlToText(html) {\n  return decodeEntities(\n    String(html ?? '')\n      .replace(/<(script|style)[\\s\\S]*?<\\/\\1>/gi, '')\n      .replace(/<br\\s*\\/?>/gi, '\\n')\n      .replace(/<\\/(p|li|h[1-6]|div)>/gi, '\\n')\n      .replace(/<[^>]+>/g, '')\n  )\n    .split('\\n')\n    .map((l) => l.replace(/\\s+/g, ' ').trim())\n    .filter(Boolean)\n    .join('\\n');\n}\n\nfunction clean(s) {\n  return decodeEntities(String(s ?? '')).replace(/\\s+/g, ' ').trim();\n}\n\n// \"PT1H15M\" -> 75, \"30 min\" -> 30, \"1 time 15 min\" -> 75\nfunction toMinutes(...candidates) {\n  for (const raw of candidates) {\n    const s = clean(raw);\n    if (!s) continue;\n    const iso = /^P(?:\\d+D)?T?(?:(\\d+)H)?(?:(\\d+)M)?/i.exec(s);\n    if (iso && (iso[1] || iso[2])) return Number(iso[1] || 0) * 60 + Number(iso[2] || 0);\n    const h = /(\\d+)\\s*(?:t|time|timer|h)\\b/i.exec(s);\n    const m = /(\\d+)\\s*(?:m|min|minutter)\\b/i.exec(s);\n    if (h || m) return Number(h?.[1] || 0) * 60 + Number(m?.[1] || 0);\n  }\n  return null;\n}\n\n// Gennemgår <li>-elementerne i en eller flere ul.ingredientlist og holder styr på\n// sektionsoverskrifter som \"Til servering\".\nfunction parseIngredients(listHtmls) {\n  const lists = Array.isArray(listHtmls) ? listHtmls : listHtmls ? [listHtmls] : [];\n  const out = [];\n  let section = '';\n  for (const html of lists) {\n    const re = /<li\\b([^>]*)>([\\s\\S]*?)<\\/li>/gi;\n    let m;\n    while ((m = re.exec(String(html)))) {\n      const attrs = m[1];\n      const text = clean(m[2].replace(/<[^>]+>/g, ' '));\n      if (!text) continue;\n      if (/ingredient-header/.test(attrs)) {\n        section = text.replace(/:$/, '');\n      } else {\n        out.push({ text, section });\n      }\n    }\n  }\n  return out;\n}\n\n// Deler en lang tekst på afsnit, så ingen chunk bliver over maxChars.\nfunction splitParagraphs(text, maxChars = 1200) {\n  const parts = [];\n  let cur = '';\n  for (const p of text.split('\\n')) {\n    if (cur && (cur + '\\n' + p).length > maxChars) {\n      parts.push(cur);\n      cur = p;\n    } else {\n      cur = cur ? cur + '\\n' + p : p;\n    }\n  }\n  if (cur) parts.push(cur);\n  return parts;\n}\n\nfunction buildRecipe(d, url) {\n  const title = clean(d.title);\n  const ingredients = parseIngredients(d.ingredientLists);\n  const instructions = htmlToText(d.instructionsHtml);\n  if (!title || ingredients.length === 0) return null;\n\n  const category = clean(d.category) || null;\n  const tags = [...new Set(\n    clean(d.keywords).split(',').map((t) => t.trim()).filter(Boolean)\n  )];\n  const servingsMatch = /\\d+/.exec(clean(d.servings));\n\n  const recipe = {\n    title,\n    description: clean(d.description),\n    category,\n    tags,\n    servings: servingsMatch ? Number(servingsMatch[0]) : null,\n    totalMinutes: toMinutes(d.totalTimeContent, d.totalTimeText),\n    cookMinutes: toMinutes(d.cookTimeContent, d.cookTimeText),\n    image: clean(d.image) || null,\n    ingredientLines: ingredients.map((i) => i.text),\n    ingredientSections: ingredients.map((i) => i.section),\n    instructions,\n  };\n\n  // Chunking efter opskriftens egen struktur: profil, ingredienser, fremgangsmåde.\n  const meta = [\n    recipe.category && `Kategori: ${recipe.category}.`,\n    tags.length && `Tags: ${tags.join(', ')}.`,\n    recipe.totalMinutes && `Tid i alt: ${recipe.totalMinutes} minutter.`,\n    recipe.servings && `Portioner: ${recipe.servings}.`,\n  ].filter(Boolean).join(' ');\n\n  const ingredientText = ingredients\n    .map((i) => (i.section ? `${i.text} (${i.section.toLowerCase()})` : i.text))\n    .join('; ');\n\n  const chunks = [\n    { type: 'profil', text: `${title}. ${recipe.description} ${meta}`.trim() },\n    { type: 'ingredienser', text: `Ingredienser til ${title}: ${ingredientText}.` },\n  ];\n  splitParagraphs(instructions).forEach((part, i, all) => {\n    chunks.push({\n      type: all.length > 1 ? `fremgangsmaade-${i + 1}` : 'fremgangsmaade',\n      text: `Fremgangsmåde for ${title}: ${part}`,\n    });\n  });\n\n  return { recipe, chunks };\n}\n\n// ---- n8n ----\nconst items = $input.all();\nconst out = [];\nconst skipped = [];\nfor (let i = 0; i < items.length; i++) {\n  const url = $('Opskrift-links').itemMatching(i).json.url;\n  const built = buildRecipe(items[i].json, url);\n  if (!built) { skipped.push(url); continue; }\n  out.push({ json: { url, ...built }, pairedItem: { item: i } });\n}\nif (skipped.length) console.log('Sprunget over – ingen opskrift fundet på:', skipped);\nreturn out;"
+      },
+      "id": "b185d51f-fa88-47ce-8673-d60a05c2e22e",
+      "name": "Byg opskrift og chunks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/embed",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'nomic-embed-text', input: $json.chunks.map(c => 'search_document: ' + c.text) }) }}",
+        "options": {}
+      },
+      "id": "3e200b4c-0bde-417e-ac8d-86b80b029ea4",
+      "name": "Embed chunks (Ollama)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Kobler embeddings sammen med chunks og bygger én Neo4j-transaktion pr. opskrift.\nconst base = $('Byg opskrift og chunks').item.json;\nconst embeddings = $json.embeddings;\n\nif (!Array.isArray(embeddings) || embeddings.length !== base.chunks.length) {\n  throw new Error(`Fik ${embeddings?.length ?? 0} embeddings for ${base.chunks.length} chunks (${base.url})`);\n}\n\nconst chunks = base.chunks.map((c, i) => ({ ...c, embedding: embeddings[i] }));\n\nconst RECIPE_CYPHER = \"MERGE (r:Recipe {url: $url})\\nSET r.title = $recipe.title,\\n    r.description = $recipe.description,\\n    r.servings = $recipe.servings,\\n    r.totalMinutes = $recipe.totalMinutes,\\n    r.cookMinutes = $recipe.cookMinutes,\\n    r.image = $recipe.image,\\n    r.ingredientLines = $recipe.ingredientLines,\\n    r.ingredientSections = $recipe.ingredientSections,\\n    r.source = 'valdemarsro.dk',\\n    r.ingestedAt = datetime()\\nWITH r\\nCALL {\\n  WITH r\\n  MATCH (r)-[old:IN_CATEGORY|HAS_TAG]->()\\n  DELETE old\\n}\\nFOREACH (c IN CASE WHEN $recipe.category IS NULL THEN [] ELSE [$recipe.category] END |\\n  MERGE (cat:Category {name: c})\\n  MERGE (r)-[:IN_CATEGORY]->(cat))\\nFOREACH (t IN $recipe.tags |\\n  MERGE (tag:Tag {name: t})\\n  MERGE (r)-[:HAS_TAG]->(tag))\";\nconst CHUNK_CYPHER = \"MATCH (r:Recipe {url: $url})\\nCALL {\\n  WITH r\\n  MATCH (old:Chunk)-[:CHUNK_OF]->(r)\\n  DETACH DELETE old\\n}\\nWITH r\\nUNWIND $chunks AS ch\\nCREATE (c:Chunk {\\n  id: $url + '#' + ch.type,\\n  type: ch.type,\\n  text: ch.text,\\n  source: $url,\\n  recipeTitle: r.title,\\n  embeddingModel: $model\\n})\\nSET c.embedding = [x IN ch.embedding | toFloat(x)]\\nCREATE (c)-[:CHUNK_OF]->(r)\";\n\nreturn {\n  json: {\n    url: base.url,\n    title: base.recipe.title,\n    chunkCount: chunks.length,\n    body: {\n      statements: [\n        { statement: RECIPE_CYPHER, parameters: { url: base.url, recipe: base.recipe } },\n        { statement: CHUNK_CYPHER, parameters: { url: base.url, chunks, model: \"nomic-embed-text\" } },\n      ],\n    },\n  },\n};"
+      },
+      "id": "fa41b98f-4026-46a4-8f76-2a887acd2927",
+      "name": "Byg Cypher",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://neo4j:7474/db/neo4j/tx/commit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {}
+      },
+      "id": "e56ff3d0-be37-4712-92b8-8a1f21c9de76",
+      "name": "Skriv til Neo4j",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Neo4j's HTTP API svarer 200 selv når Cypher fejler – fejlene ligger i \"errors\".\nconst src = $('Byg Cypher').item.json;\nconst errors = $json.errors || [];\nif (errors.length) {\n  throw new Error(`Neo4j afviste ${src.url}: ` + errors.map((e) => `${e.code}: ${e.message}`).join(' | '));\n}\nreturn { json: { status: 'gemt', title: src.title, url: src.url, chunks: src.chunkCount } };"
+      },
+      "id": "62e2a6f8-d81f-4546-affe-915f01d09c2a",
+      "name": "Tjek svar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Start manuelt": {
+      "main": [
+        [
+          {
+            "node": "Opskrift-links",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Opskrift-links": {
+      "main": [
+        [
+          {
+            "node": "Hent opskriftsside",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hent opskriftsside": {
+      "main": [
+        [
+          {
+            "node": "Udtræk felter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Udtræk felter": {
+      "main": [
+        [
+          {
+            "node": "Byg opskrift og chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Byg opskrift og chunks": {
+      "main": [
+        [
+          {
+            "node": "Embed chunks (Ollama)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embed chunks (Ollama)": {
+      "main": [
+        [
+          {
+            "node": "Byg Cypher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Byg Cypher": {
+      "main": [
+        [
+          {
+            "node": "Skriv til Neo4j",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skriv til Neo4j": {
+      "main": [
+        [
+          {
+            "node": "Tjek svar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
