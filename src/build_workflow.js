@@ -22,6 +22,13 @@ SET r.title = $recipe.title,
     r.totalMinutes = $recipe.totalMinutes,
     r.cookMinutes = $recipe.cookMinutes,
     r.image = $recipe.image,
+    r.shelfLife = $recipe.shelfLife,
+    r.freezable = $recipe.freezable,
+    r.tips = $recipe.tips,
+    r.serveWith = $recipe.serveWith,
+    r.serveWithTitles = $recipe.serveWithTitles,
+    r.seeAlso = $recipe.seeAlso,
+    r.seeAlsoTitles = $recipe.seeAlsoTitles,
     r.ingredientLines = $recipe.ingredientLines,
     r.ingredientSections = $recipe.ingredientSections,
     r.source = 'valdemarsro.dk',
@@ -29,7 +36,7 @@ SET r.title = $recipe.title,
 WITH r
 CALL {
   WITH r
-  MATCH (r)-[old:IN_CATEGORY|HAS_TAG]->()
+  MATCH (r)-[old:IN_CATEGORY|HAS_TAG|SERVED_WITH|SEE_ALSO]->()
   DELETE old
 }
 FOREACH (c IN CASE WHEN $recipe.category IS NULL THEN [] ELSE [$recipe.category] END |
@@ -57,6 +64,39 @@ CREATE (c:Chunk {
 })
 SET c.embedding = [x IN ch.embedding | toFloat(x)]
 CREATE (c)-[:CHUNK_OF]->(r)`;
+
+// Kobler opskrifter, der henviser til hinanden ("Forslag til servering" / "Prøv også"),
+// men kun hvis begge ligger i databasen. Kører over alle opskrifter, så rækkefølgen af
+// ingestion er ligegyldig. Idempotent (MERGE).
+const LINK_SERVED_CYPHER = `MATCH (a:Recipe), (b:Recipe)
+WHERE a <> b AND b.url IN coalesce(a.serveWith, [])
+MERGE (a)-[:SERVED_WITH]->(b)`;
+
+const LINK_SEE_ALSO_CYPHER = `MATCH (a:Recipe), (b:Recipe)
+WHERE a <> b AND b.url IN coalesce(a.seeAlso, [])
+MERGE (a)-[:SEE_ALSO]->(b)`;
+
+// Felter som HTML-noden "Udtræk felter" henter (CSS-selectors på schema.org-microdata m.m.).
+// Bruges også af src/test_parse.js, som efterligner noden med cheerio mod gemte sider.
+const EXTRACTION_VALUES = [
+  { key: 'title', cssSelector: 'h1[itemprop="headline"]' },
+  // HTML, fordi elementet også rummer hele opskriftsboksen – cleanDescription() klipper intro-teksten ud.
+  { key: 'description', cssSelector: '[itemprop="description"]', returnValue: 'html' },
+  { key: 'category', cssSelector: '[itemprop="recipeCategory"]' },
+  { key: 'keywords', cssSelector: '[itemprop="keywords"]' },
+  { key: 'totalTimeContent', cssSelector: '[itemprop="totalTime"]', returnValue: 'attribute', attribute: 'content' },
+  { key: 'totalTimeText', cssSelector: '[itemprop="totalTime"]' },
+  { key: 'cookTimeContent', cssSelector: '[itemprop="cookTime"]', returnValue: 'attribute', attribute: 'content' },
+  { key: 'cookTimeText', cssSelector: '[itemprop="cookTime"]' },
+  { key: 'servings', cssSelector: '[itemprop="recipeYield"]' },
+  { key: 'image', cssSelector: 'meta[property="og:image"]', returnValue: 'attribute', attribute: 'content' },
+  { key: 'ingredientLists', cssSelector: 'ul.ingredientlist', returnValue: 'html', returnArray: true },
+  { key: 'instructionsHtml', cssSelector: '[itemprop="recipeInstructions"]', returnValue: 'html' },
+  { key: 'stats', cssSelector: '.recipe-stats .recipe-stat', returnValue: 'html', returnArray: true },
+  { key: 'tipsHtml', cssSelector: 'h3:contains("Tip til opskriften") + ul', returnValue: 'html' },
+  { key: 'serveWithHtml', cssSelector: '#tab1_content .post-list-item-title', returnValue: 'html', returnArray: true },
+  { key: 'seeAlsoHtml', cssSelector: '#tab2_content .post-list-item-title', returnValue: 'html', returnArray: true },
+];
 
 const code = {
   links: `// Indsæt dine favoritopskrifter fra valdemarsro.dk her – én URL pr. linje.
@@ -95,6 +135,8 @@ const chunks = base.chunks.map((c, i) => ({ ...c, embedding: embeddings[i] }));
 
 const RECIPE_CYPHER = ${JSON.stringify(RECIPE_CYPHER)};
 const CHUNK_CYPHER = ${JSON.stringify(CHUNK_CYPHER)};
+const LINK_SERVED_CYPHER = ${JSON.stringify(LINK_SERVED_CYPHER)};
+const LINK_SEE_ALSO_CYPHER = ${JSON.stringify(LINK_SEE_ALSO_CYPHER)};
 
 return {
   json: {
@@ -105,6 +147,8 @@ return {
       statements: [
         { statement: RECIPE_CYPHER, parameters: { url: base.url, recipe: base.recipe } },
         { statement: CHUNK_CYPHER, parameters: { url: base.url, chunks, model: ${JSON.stringify(EMBED_MODEL)} } },
+        { statement: LINK_SERVED_CYPHER },
+        { statement: LINK_SEE_ALSO_CYPHER },
       ],
     },
   },
@@ -178,20 +222,7 @@ const nodes = [
       operation: 'extractHtmlContent',
       dataPropertyName: 'html',
       extractionValues: {
-        values: [
-          { key: 'title', cssSelector: 'h1[itemprop="headline"]' },
-          { key: 'description', cssSelector: '[itemprop="description"]' },
-          { key: 'category', cssSelector: '[itemprop="recipeCategory"]' },
-          { key: 'keywords', cssSelector: '[itemprop="keywords"]' },
-          { key: 'totalTimeContent', cssSelector: '[itemprop="totalTime"]', returnValue: 'attribute', attribute: 'content' },
-          { key: 'totalTimeText', cssSelector: '[itemprop="totalTime"]' },
-          { key: 'cookTimeContent', cssSelector: '[itemprop="cookTime"]', returnValue: 'attribute', attribute: 'content' },
-          { key: 'cookTimeText', cssSelector: '[itemprop="cookTime"]' },
-          { key: 'servings', cssSelector: '[itemprop="recipeYield"]' },
-          { key: 'image', cssSelector: 'meta[property="og:image"]', returnValue: 'attribute', attribute: 'content' },
-          { key: 'ingredientLists', cssSelector: 'ul.ingredientlist', returnValue: 'html', returnArray: true },
-          { key: 'instructionsHtml', cssSelector: '[itemprop="recipeInstructions"]', returnValue: 'html' },
-        ],
+        values: EXTRACTION_VALUES,
       },
       options: { trimValues: true },
     },
@@ -277,8 +308,10 @@ const workflow = {
   pinData: {},
 };
 
-const out = path.join(root, 'n8n', '01_ingest_opskrifter.json');
-fs.writeFileSync(out, JSON.stringify(workflow, null, 2));
-console.log('Skrev', out);
+module.exports = { RECIPE_CYPHER, CHUNK_CYPHER, LINK_SERVED_CYPHER, LINK_SEE_ALSO_CYPHER, EXTRACTION_VALUES, code };
 
-module.exports = { RECIPE_CYPHER, CHUNK_CYPHER, code };
+if (require.main === module) {
+  const out = path.join(root, 'n8n', '01_ingest_opskrifter.json');
+  fs.writeFileSync(out, JSON.stringify(workflow, null, 2));
+  console.log('Skrev', out);
+}

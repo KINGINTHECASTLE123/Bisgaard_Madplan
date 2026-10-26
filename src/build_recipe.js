@@ -86,6 +86,49 @@ function splitParagraphs(text, maxChars = 1200) {
   return parts;
 }
 
+// Elementet med itemprop="description" indeholder hele opskriftsboksen (tid, ingredienser,
+// fremgangsmåde, knapper). Kun intro-teksten før boksen er beskrivelsen; "Prøv også:"-links fjernes.
+function cleanDescription(html) {
+  const intro = String(html ?? '').split(/<div[^>]*class="(?:clear|post-recipe)"/i)[0];
+  return htmlToText(intro)
+    .split('\n')
+    .filter((l) => !/^(prøv|se) også/i.test(l))
+    .join(' ')
+    .trim();
+}
+
+// ["<span ...>Holdbarhed</span><strong>2-3 dage</strong>", ...] -> { Holdbarhed: '2-3 dage', ... }
+function parseStats(statHtmls) {
+  const out = {};
+  for (const h of [].concat(statHtmls || [])) {
+    const m = /recipe-stat-label[^>]*>([\s\S]*?)<\/span>[\s\S]*?<strong[^>]*>([\s\S]*?)<\/strong>/i.exec(String(h));
+    if (m) out[clean(m[1].replace(/<[^>]+>/g, ''))] = clean(m[2].replace(/<[^>]+>/g, ''));
+  }
+  return out;
+}
+
+// "<li>tip</li>..." -> ['tip', ...]
+function parseListItems(html) {
+  return [...String(html ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
+    .map((m) => clean(m[1].replace(/<[^>]+>/g, ' ')))
+    .filter(Boolean);
+}
+
+// ['<a href="https://www.valdemarsro.dk/x/">Titel</a>', ...] -> [{ url, title }]
+function parseLinks(htmls, self) {
+  const seen = new Set();
+  const out = [];
+  for (const h of [].concat(htmls || [])) {
+    const m = /<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/i.exec(String(h));
+    if (!m) continue;
+    const url = m[1].replace(/^\/\//, 'https://');
+    if (url === self || seen.has(url)) continue;
+    seen.add(url);
+    out.push({ url, title: clean(m[2].replace(/<[^>]+>/g, '')) });
+  }
+  return out;
+}
+
 function buildRecipe(d, url) {
   const title = clean(d.title);
   const ingredients = parseIngredients(d.ingredientLists);
@@ -97,16 +140,28 @@ function buildRecipe(d, url) {
     clean(d.keywords).split(',').map((t) => t.trim()).filter(Boolean)
   )];
   const servingsMatch = /\d+/.exec(clean(d.servings));
+  const stats = parseStats(d.stats);
+  const tips = parseListItems(d.tipsHtml);
+  const serveWith = parseLinks(d.serveWithHtml, url);
+  const seeAlso = parseLinks(d.seeAlsoHtml, url);
+  const freezeRaw = (stats['Kan fryses'] || '').toLowerCase();
 
   const recipe = {
     title,
-    description: clean(d.description),
+    description: cleanDescription(d.description),
     category,
     tags,
     servings: servingsMatch ? Number(servingsMatch[0]) : null,
     totalMinutes: toMinutes(d.totalTimeContent, d.totalTimeText),
     cookMinutes: toMinutes(d.cookTimeContent, d.cookTimeText),
     image: clean(d.image) || null,
+    shelfLife: stats['Holdbarhed'] || null,
+    freezable: freezeRaw === 'ja' ? true : freezeRaw === 'nej' ? false : null,
+    tips,
+    serveWith: serveWith.map((l) => l.url),
+    serveWithTitles: serveWith.map((l) => l.title),
+    seeAlso: seeAlso.map((l) => l.url),
+    seeAlsoTitles: seeAlso.map((l) => l.title),
     ingredientLines: ingredients.map((i) => i.text),
     ingredientSections: ingredients.map((i) => i.section),
     instructions,
@@ -118,6 +173,8 @@ function buildRecipe(d, url) {
     tags.length && `Tags: ${tags.join(', ')}.`,
     recipe.totalMinutes && `Tid i alt: ${recipe.totalMinutes} minutter.`,
     recipe.servings && `Portioner: ${recipe.servings}.`,
+    recipe.shelfLife && `Holdbarhed: ${recipe.shelfLife}.`,
+    recipe.freezable !== null && `Kan fryses: ${recipe.freezable ? 'ja' : 'nej'}.`,
   ].filter(Boolean).join(' ');
 
   const ingredientText = ingredients
@@ -128,6 +185,9 @@ function buildRecipe(d, url) {
     { type: 'profil', text: `${title}. ${recipe.description} ${meta}`.trim() },
     { type: 'ingredienser', text: `Ingredienser til ${title}: ${ingredientText}.` },
   ];
+  if (tips.length) {
+    chunks.push({ type: 'tips', text: `Tips til ${title}: ${tips.join(' ')}` });
+  }
   splitParagraphs(instructions).forEach((part, i, all) => {
     chunks.push({
       type: all.length > 1 ? `fremgangsmaade-${i + 1}` : 'fremgangsmaade',
@@ -139,5 +199,5 @@ function buildRecipe(d, url) {
 }
 
 if (typeof module !== 'undefined') {
-  module.exports = { buildRecipe, parseIngredients, toMinutes, htmlToText, decodeEntities };
+  module.exports = { buildRecipe, cleanDescription, parseStats, parseListItems, parseLinks, parseIngredients, toMinutes, htmlToText, decodeEntities };
 }

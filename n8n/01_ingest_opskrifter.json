@@ -8,7 +8,7 @@
         "width": 1560,
         "color": 4
       },
-      "id": "fb1a2336-6673-46f2-861c-645699502943",
+      "id": "47884d81-3aac-4147-8eab-3c82a707b819",
       "name": "Beskrivelse",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -19,7 +19,7 @@
     },
     {
       "parameters": {},
-      "id": "06f073d4-36a5-4558-8b19-c5b28fc5b64f",
+      "id": "fb13b410-a830-485f-82e1-2ecb1dd4010e",
       "name": "Start manuelt",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
@@ -32,7 +32,7 @@
       "parameters": {
         "jsCode": "// Indsæt dine favoritopskrifter fra valdemarsro.dk her – én URL pr. linje.\n// Dubletter fjernes automatisk, og allerede indlæste opskrifter overskrives (idempotent).\nconst urls = [\n  'https://www.valdemarsro.dk/porresuppe/',\n];\n\nreturn [...new Set(urls.map((u) => u.trim()).filter(Boolean))]\n  .map((url) => ({ json: { url } }));"
       },
-      "id": "66686be3-c73f-4add-9063-614973ccc339",
+      "id": "f75c0de8-4fe9-45f4-9b3f-cf497de03e6f",
       "name": "Opskrift-links",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -68,7 +68,7 @@
           }
         }
       },
-      "id": "68a396b1-e062-4bb4-afe6-772a1b87fe48",
+      "id": "0238d4e6-9780-43c1-a5a5-744f166a9bb4",
       "name": "Hent opskriftsside",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -89,7 +89,8 @@
             },
             {
               "key": "description",
-              "cssSelector": "[itemprop=\"description\"]"
+              "cssSelector": "[itemprop=\"description\"]",
+              "returnValue": "html"
             },
             {
               "key": "category",
@@ -139,6 +140,29 @@
               "key": "instructionsHtml",
               "cssSelector": "[itemprop=\"recipeInstructions\"]",
               "returnValue": "html"
+            },
+            {
+              "key": "stats",
+              "cssSelector": ".recipe-stats .recipe-stat",
+              "returnValue": "html",
+              "returnArray": true
+            },
+            {
+              "key": "tipsHtml",
+              "cssSelector": "h3:contains(\"Tip til opskriften\") + ul",
+              "returnValue": "html"
+            },
+            {
+              "key": "serveWithHtml",
+              "cssSelector": "#tab1_content .post-list-item-title",
+              "returnValue": "html",
+              "returnArray": true
+            },
+            {
+              "key": "seeAlsoHtml",
+              "cssSelector": "#tab2_content .post-list-item-title",
+              "returnValue": "html",
+              "returnArray": true
             }
           ]
         },
@@ -146,7 +170,7 @@
           "trimValues": true
         }
       },
-      "id": "bb13399c-34e3-420a-a998-62dd29b71dfb",
+      "id": "cf1c6a43-d3e7-416f-a248-cf5cf25db195",
       "name": "Udtræk felter",
       "type": "n8n-nodes-base.html",
       "typeVersion": 1.2,
@@ -157,9 +181,9 @@
     },
     {
       "parameters": {
-        "jsCode": "// Ren logik til n8n-Code-noden \"Byg opskrift og chunks\".\n// Input: felterne fra HTML-noden \"Udtræk felter\" + opskriftens URL.\n// Output: { recipe, chunks } eller null hvis siden ikke er en opskrift.\n\nfunction decodeEntities(s) {\n  const named = {\n    amp: '&', lt: '<', gt: '>', quot: '\"', apos: \"'\", nbsp: ' ',\n    aelig: 'æ', oslash: 'ø', aring: 'å', AElig: 'Æ', Oslash: 'Ø', Aring: 'Å',\n    frac12: '½', frac14: '¼', frac34: '¾', ndash: '–', mdash: '—',\n    rsquo: '’', lsquo: '‘', rdquo: '”', ldquo: '“', hellip: '…', deg: '°',\n  };\n  return String(s ?? '')\n    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))\n    .replace(/&#(\\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))\n    .replace(/&([a-z][a-z0-9]*);/gi, (m, n) => (n in named ? named[n] : m));\n}\n\nfunction htmlToText(html) {\n  return decodeEntities(\n    String(html ?? '')\n      .replace(/<(script|style)[\\s\\S]*?<\\/\\1>/gi, '')\n      .replace(/<br\\s*\\/?>/gi, '\\n')\n      .replace(/<\\/(p|li|h[1-6]|div)>/gi, '\\n')\n      .replace(/<[^>]+>/g, '')\n  )\n    .split('\\n')\n    .map((l) => l.replace(/\\s+/g, ' ').trim())\n    .filter(Boolean)\n    .join('\\n');\n}\n\nfunction clean(s) {\n  return decodeEntities(String(s ?? '')).replace(/\\s+/g, ' ').trim();\n}\n\n// \"PT1H15M\" -> 75, \"30 min\" -> 30, \"1 time 15 min\" -> 75\nfunction toMinutes(...candidates) {\n  for (const raw of candidates) {\n    const s = clean(raw);\n    if (!s) continue;\n    const iso = /^P(?:\\d+D)?T?(?:(\\d+)H)?(?:(\\d+)M)?/i.exec(s);\n    if (iso && (iso[1] || iso[2])) return Number(iso[1] || 0) * 60 + Number(iso[2] || 0);\n    const h = /(\\d+)\\s*(?:t|time|timer|h)\\b/i.exec(s);\n    const m = /(\\d+)\\s*(?:m|min|minutter)\\b/i.exec(s);\n    if (h || m) return Number(h?.[1] || 0) * 60 + Number(m?.[1] || 0);\n  }\n  return null;\n}\n\n// Gennemgår <li>-elementerne i en eller flere ul.ingredientlist og holder styr på\n// sektionsoverskrifter som \"Til servering\".\nfunction parseIngredients(listHtmls) {\n  const lists = Array.isArray(listHtmls) ? listHtmls : listHtmls ? [listHtmls] : [];\n  const out = [];\n  let section = '';\n  for (const html of lists) {\n    const re = /<li\\b([^>]*)>([\\s\\S]*?)<\\/li>/gi;\n    let m;\n    while ((m = re.exec(String(html)))) {\n      const attrs = m[1];\n      const text = clean(m[2].replace(/<[^>]+>/g, ' '));\n      if (!text) continue;\n      if (/ingredient-header/.test(attrs)) {\n        section = text.replace(/:$/, '');\n      } else {\n        out.push({ text, section });\n      }\n    }\n  }\n  return out;\n}\n\n// Deler en lang tekst på afsnit, så ingen chunk bliver over maxChars.\nfunction splitParagraphs(text, maxChars = 1200) {\n  const parts = [];\n  let cur = '';\n  for (const p of text.split('\\n')) {\n    if (cur && (cur + '\\n' + p).length > maxChars) {\n      parts.push(cur);\n      cur = p;\n    } else {\n      cur = cur ? cur + '\\n' + p : p;\n    }\n  }\n  if (cur) parts.push(cur);\n  return parts;\n}\n\nfunction buildRecipe(d, url) {\n  const title = clean(d.title);\n  const ingredients = parseIngredients(d.ingredientLists);\n  const instructions = htmlToText(d.instructionsHtml);\n  if (!title || ingredients.length === 0) return null;\n\n  const category = clean(d.category) || null;\n  const tags = [...new Set(\n    clean(d.keywords).split(',').map((t) => t.trim()).filter(Boolean)\n  )];\n  const servingsMatch = /\\d+/.exec(clean(d.servings));\n\n  const recipe = {\n    title,\n    description: clean(d.description),\n    category,\n    tags,\n    servings: servingsMatch ? Number(servingsMatch[0]) : null,\n    totalMinutes: toMinutes(d.totalTimeContent, d.totalTimeText),\n    cookMinutes: toMinutes(d.cookTimeContent, d.cookTimeText),\n    image: clean(d.image) || null,\n    ingredientLines: ingredients.map((i) => i.text),\n    ingredientSections: ingredients.map((i) => i.section),\n    instructions,\n  };\n\n  // Chunking efter opskriftens egen struktur: profil, ingredienser, fremgangsmåde.\n  const meta = [\n    recipe.category && `Kategori: ${recipe.category}.`,\n    tags.length && `Tags: ${tags.join(', ')}.`,\n    recipe.totalMinutes && `Tid i alt: ${recipe.totalMinutes} minutter.`,\n    recipe.servings && `Portioner: ${recipe.servings}.`,\n  ].filter(Boolean).join(' ');\n\n  const ingredientText = ingredients\n    .map((i) => (i.section ? `${i.text} (${i.section.toLowerCase()})` : i.text))\n    .join('; ');\n\n  const chunks = [\n    { type: 'profil', text: `${title}. ${recipe.description} ${meta}`.trim() },\n    { type: 'ingredienser', text: `Ingredienser til ${title}: ${ingredientText}.` },\n  ];\n  splitParagraphs(instructions).forEach((part, i, all) => {\n    chunks.push({\n      type: all.length > 1 ? `fremgangsmaade-${i + 1}` : 'fremgangsmaade',\n      text: `Fremgangsmåde for ${title}: ${part}`,\n    });\n  });\n\n  return { recipe, chunks };\n}\n\n// ---- n8n ----\nconst items = $input.all();\nconst out = [];\nconst skipped = [];\nfor (let i = 0; i < items.length; i++) {\n  const url = $('Opskrift-links').itemMatching(i).json.url;\n  const built = buildRecipe(items[i].json, url);\n  if (!built) { skipped.push(url); continue; }\n  out.push({ json: { url, ...built }, pairedItem: { item: i } });\n}\nif (skipped.length) console.log('Sprunget over – ingen opskrift fundet på:', skipped);\nreturn out;"
+        "jsCode": "// Ren logik til n8n-Code-noden \"Byg opskrift og chunks\".\n// Input: felterne fra HTML-noden \"Udtræk felter\" + opskriftens URL.\n// Output: { recipe, chunks } eller null hvis siden ikke er en opskrift.\n\nfunction decodeEntities(s) {\n  const named = {\n    amp: '&', lt: '<', gt: '>', quot: '\"', apos: \"'\", nbsp: ' ',\n    aelig: 'æ', oslash: 'ø', aring: 'å', AElig: 'Æ', Oslash: 'Ø', Aring: 'Å',\n    frac12: '½', frac14: '¼', frac34: '¾', ndash: '–', mdash: '—',\n    rsquo: '’', lsquo: '‘', rdquo: '”', ldquo: '“', hellip: '…', deg: '°',\n  };\n  return String(s ?? '')\n    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))\n    .replace(/&#(\\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))\n    .replace(/&([a-z][a-z0-9]*);/gi, (m, n) => (n in named ? named[n] : m));\n}\n\nfunction htmlToText(html) {\n  return decodeEntities(\n    String(html ?? '')\n      .replace(/<(script|style)[\\s\\S]*?<\\/\\1>/gi, '')\n      .replace(/<br\\s*\\/?>/gi, '\\n')\n      .replace(/<\\/(p|li|h[1-6]|div)>/gi, '\\n')\n      .replace(/<[^>]+>/g, '')\n  )\n    .split('\\n')\n    .map((l) => l.replace(/\\s+/g, ' ').trim())\n    .filter(Boolean)\n    .join('\\n');\n}\n\nfunction clean(s) {\n  return decodeEntities(String(s ?? '')).replace(/\\s+/g, ' ').trim();\n}\n\n// \"PT1H15M\" -> 75, \"30 min\" -> 30, \"1 time 15 min\" -> 75\nfunction toMinutes(...candidates) {\n  for (const raw of candidates) {\n    const s = clean(raw);\n    if (!s) continue;\n    const iso = /^P(?:\\d+D)?T?(?:(\\d+)H)?(?:(\\d+)M)?/i.exec(s);\n    if (iso && (iso[1] || iso[2])) return Number(iso[1] || 0) * 60 + Number(iso[2] || 0);\n    const h = /(\\d+)\\s*(?:t|time|timer|h)\\b/i.exec(s);\n    const m = /(\\d+)\\s*(?:m|min|minutter)\\b/i.exec(s);\n    if (h || m) return Number(h?.[1] || 0) * 60 + Number(m?.[1] || 0);\n  }\n  return null;\n}\n\n// Gennemgår <li>-elementerne i en eller flere ul.ingredientlist og holder styr på\n// sektionsoverskrifter som \"Til servering\".\nfunction parseIngredients(listHtmls) {\n  const lists = Array.isArray(listHtmls) ? listHtmls : listHtmls ? [listHtmls] : [];\n  const out = [];\n  let section = '';\n  for (const html of lists) {\n    const re = /<li\\b([^>]*)>([\\s\\S]*?)<\\/li>/gi;\n    let m;\n    while ((m = re.exec(String(html)))) {\n      const attrs = m[1];\n      const text = clean(m[2].replace(/<[^>]+>/g, ' '));\n      if (!text) continue;\n      if (/ingredient-header/.test(attrs)) {\n        section = text.replace(/:$/, '');\n      } else {\n        out.push({ text, section });\n      }\n    }\n  }\n  return out;\n}\n\n// Deler en lang tekst på afsnit, så ingen chunk bliver over maxChars.\nfunction splitParagraphs(text, maxChars = 1200) {\n  const parts = [];\n  let cur = '';\n  for (const p of text.split('\\n')) {\n    if (cur && (cur + '\\n' + p).length > maxChars) {\n      parts.push(cur);\n      cur = p;\n    } else {\n      cur = cur ? cur + '\\n' + p : p;\n    }\n  }\n  if (cur) parts.push(cur);\n  return parts;\n}\n\n// Elementet med itemprop=\"description\" indeholder hele opskriftsboksen (tid, ingredienser,\n// fremgangsmåde, knapper). Kun intro-teksten før boksen er beskrivelsen; \"Prøv også:\"-links fjernes.\nfunction cleanDescription(html) {\n  const intro = String(html ?? '').split(/<div[^>]*class=\"(?:clear|post-recipe)\"/i)[0];\n  return htmlToText(intro)\n    .split('\\n')\n    .filter((l) => !/^(prøv|se) også/i.test(l))\n    .join(' ')\n    .trim();\n}\n\n// [\"<span ...>Holdbarhed</span><strong>2-3 dage</strong>\", ...] -> { Holdbarhed: '2-3 dage', ... }\nfunction parseStats(statHtmls) {\n  const out = {};\n  for (const h of [].concat(statHtmls || [])) {\n    const m = /recipe-stat-label[^>]*>([\\s\\S]*?)<\\/span>[\\s\\S]*?<strong[^>]*>([\\s\\S]*?)<\\/strong>/i.exec(String(h));\n    if (m) out[clean(m[1].replace(/<[^>]+>/g, ''))] = clean(m[2].replace(/<[^>]+>/g, ''));\n  }\n  return out;\n}\n\n// \"<li>tip</li>...\" -> ['tip', ...]\nfunction parseListItems(html) {\n  return [...String(html ?? '').matchAll(/<li\\b[^>]*>([\\s\\S]*?)<\\/li>/gi)]\n    .map((m) => clean(m[1].replace(/<[^>]+>/g, ' ')))\n    .filter(Boolean);\n}\n\n// ['<a href=\"https://www.valdemarsro.dk/x/\">Titel</a>', ...] -> [{ url, title }]\nfunction parseLinks(htmls, self) {\n  const seen = new Set();\n  const out = [];\n  for (const h of [].concat(htmls || [])) {\n    const m = /<a[^>]*href=\"([^\"]+)\"[^>]*>([\\s\\S]*?)<\\/a>/i.exec(String(h));\n    if (!m) continue;\n    const url = m[1].replace(/^\\/\\//, 'https://');\n    if (url === self || seen.has(url)) continue;\n    seen.add(url);\n    out.push({ url, title: clean(m[2].replace(/<[^>]+>/g, '')) });\n  }\n  return out;\n}\n\nfunction buildRecipe(d, url) {\n  const title = clean(d.title);\n  const ingredients = parseIngredients(d.ingredientLists);\n  const instructions = htmlToText(d.instructionsHtml);\n  if (!title || ingredients.length === 0) return null;\n\n  const category = clean(d.category) || null;\n  const tags = [...new Set(\n    clean(d.keywords).split(',').map((t) => t.trim()).filter(Boolean)\n  )];\n  const servingsMatch = /\\d+/.exec(clean(d.servings));\n  const stats = parseStats(d.stats);\n  const tips = parseListItems(d.tipsHtml);\n  const serveWith = parseLinks(d.serveWithHtml, url);\n  const seeAlso = parseLinks(d.seeAlsoHtml, url);\n  const freezeRaw = (stats['Kan fryses'] || '').toLowerCase();\n\n  const recipe = {\n    title,\n    description: cleanDescription(d.description),\n    category,\n    tags,\n    servings: servingsMatch ? Number(servingsMatch[0]) : null,\n    totalMinutes: toMinutes(d.totalTimeContent, d.totalTimeText),\n    cookMinutes: toMinutes(d.cookTimeContent, d.cookTimeText),\n    image: clean(d.image) || null,\n    shelfLife: stats['Holdbarhed'] || null,\n    freezable: freezeRaw === 'ja' ? true : freezeRaw === 'nej' ? false : null,\n    tips,\n    serveWith: serveWith.map((l) => l.url),\n    serveWithTitles: serveWith.map((l) => l.title),\n    seeAlso: seeAlso.map((l) => l.url),\n    seeAlsoTitles: seeAlso.map((l) => l.title),\n    ingredientLines: ingredients.map((i) => i.text),\n    ingredientSections: ingredients.map((i) => i.section),\n    instructions,\n  };\n\n  // Chunking efter opskriftens egen struktur: profil, ingredienser, fremgangsmåde.\n  const meta = [\n    recipe.category && `Kategori: ${recipe.category}.`,\n    tags.length && `Tags: ${tags.join(', ')}.`,\n    recipe.totalMinutes && `Tid i alt: ${recipe.totalMinutes} minutter.`,\n    recipe.servings && `Portioner: ${recipe.servings}.`,\n    recipe.shelfLife && `Holdbarhed: ${recipe.shelfLife}.`,\n    recipe.freezable !== null && `Kan fryses: ${recipe.freezable ? 'ja' : 'nej'}.`,\n  ].filter(Boolean).join(' ');\n\n  const ingredientText = ingredients\n    .map((i) => (i.section ? `${i.text} (${i.section.toLowerCase()})` : i.text))\n    .join('; ');\n\n  const chunks = [\n    { type: 'profil', text: `${title}. ${recipe.description} ${meta}`.trim() },\n    { type: 'ingredienser', text: `Ingredienser til ${title}: ${ingredientText}.` },\n  ];\n  if (tips.length) {\n    chunks.push({ type: 'tips', text: `Tips til ${title}: ${tips.join(' ')}` });\n  }\n  splitParagraphs(instructions).forEach((part, i, all) => {\n    chunks.push({\n      type: all.length > 1 ? `fremgangsmaade-${i + 1}` : 'fremgangsmaade',\n      text: `Fremgangsmåde for ${title}: ${part}`,\n    });\n  });\n\n  return { recipe, chunks };\n}\n\n// ---- n8n ----\nconst items = $input.all();\nconst out = [];\nconst skipped = [];\nfor (let i = 0; i < items.length; i++) {\n  const url = $('Opskrift-links').itemMatching(i).json.url;\n  const built = buildRecipe(items[i].json, url);\n  if (!built) { skipped.push(url); continue; }\n  out.push({ json: { url, ...built }, pairedItem: { item: i } });\n}\nif (skipped.length) console.log('Sprunget over – ingen opskrift fundet på:', skipped);\nreturn out;"
       },
-      "id": "b185d51f-fa88-47ce-8673-d60a05c2e22e",
+      "id": "fe59dc7f-26fb-4373-81c5-f8568fccde20",
       "name": "Byg opskrift og chunks",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -177,7 +201,7 @@
         "jsonBody": "={{ JSON.stringify({ model: 'nomic-embed-text', input: $json.chunks.map(c => 'search_document: ' + c.text) }) }}",
         "options": {}
       },
-      "id": "3e200b4c-0bde-417e-ac8d-86b80b029ea4",
+      "id": "110c9849-df16-468a-a5c3-fa809235809c",
       "name": "Embed chunks (Ollama)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -189,9 +213,9 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// Kobler embeddings sammen med chunks og bygger én Neo4j-transaktion pr. opskrift.\nconst base = $('Byg opskrift og chunks').item.json;\nconst embeddings = $json.embeddings;\n\nif (!Array.isArray(embeddings) || embeddings.length !== base.chunks.length) {\n  throw new Error(`Fik ${embeddings?.length ?? 0} embeddings for ${base.chunks.length} chunks (${base.url})`);\n}\n\nconst chunks = base.chunks.map((c, i) => ({ ...c, embedding: embeddings[i] }));\n\nconst RECIPE_CYPHER = \"MERGE (r:Recipe {url: $url})\\nSET r.title = $recipe.title,\\n    r.description = $recipe.description,\\n    r.servings = $recipe.servings,\\n    r.totalMinutes = $recipe.totalMinutes,\\n    r.cookMinutes = $recipe.cookMinutes,\\n    r.image = $recipe.image,\\n    r.ingredientLines = $recipe.ingredientLines,\\n    r.ingredientSections = $recipe.ingredientSections,\\n    r.source = 'valdemarsro.dk',\\n    r.ingestedAt = datetime()\\nWITH r\\nCALL {\\n  WITH r\\n  MATCH (r)-[old:IN_CATEGORY|HAS_TAG]->()\\n  DELETE old\\n}\\nFOREACH (c IN CASE WHEN $recipe.category IS NULL THEN [] ELSE [$recipe.category] END |\\n  MERGE (cat:Category {name: c})\\n  MERGE (r)-[:IN_CATEGORY]->(cat))\\nFOREACH (t IN $recipe.tags |\\n  MERGE (tag:Tag {name: t})\\n  MERGE (r)-[:HAS_TAG]->(tag))\";\nconst CHUNK_CYPHER = \"MATCH (r:Recipe {url: $url})\\nCALL {\\n  WITH r\\n  MATCH (old:Chunk)-[:CHUNK_OF]->(r)\\n  DETACH DELETE old\\n}\\nWITH r\\nUNWIND $chunks AS ch\\nCREATE (c:Chunk {\\n  id: $url + '#' + ch.type,\\n  type: ch.type,\\n  text: ch.text,\\n  source: $url,\\n  recipeTitle: r.title,\\n  embeddingModel: $model\\n})\\nSET c.embedding = [x IN ch.embedding | toFloat(x)]\\nCREATE (c)-[:CHUNK_OF]->(r)\";\n\nreturn {\n  json: {\n    url: base.url,\n    title: base.recipe.title,\n    chunkCount: chunks.length,\n    body: {\n      statements: [\n        { statement: RECIPE_CYPHER, parameters: { url: base.url, recipe: base.recipe } },\n        { statement: CHUNK_CYPHER, parameters: { url: base.url, chunks, model: \"nomic-embed-text\" } },\n      ],\n    },\n  },\n};"
+        "jsCode": "// Kobler embeddings sammen med chunks og bygger én Neo4j-transaktion pr. opskrift.\nconst base = $('Byg opskrift og chunks').item.json;\nconst embeddings = $json.embeddings;\n\nif (!Array.isArray(embeddings) || embeddings.length !== base.chunks.length) {\n  throw new Error(`Fik ${embeddings?.length ?? 0} embeddings for ${base.chunks.length} chunks (${base.url})`);\n}\n\nconst chunks = base.chunks.map((c, i) => ({ ...c, embedding: embeddings[i] }));\n\nconst RECIPE_CYPHER = \"MERGE (r:Recipe {url: $url})\\nSET r.title = $recipe.title,\\n    r.description = $recipe.description,\\n    r.servings = $recipe.servings,\\n    r.totalMinutes = $recipe.totalMinutes,\\n    r.cookMinutes = $recipe.cookMinutes,\\n    r.image = $recipe.image,\\n    r.shelfLife = $recipe.shelfLife,\\n    r.freezable = $recipe.freezable,\\n    r.tips = $recipe.tips,\\n    r.serveWith = $recipe.serveWith,\\n    r.serveWithTitles = $recipe.serveWithTitles,\\n    r.seeAlso = $recipe.seeAlso,\\n    r.seeAlsoTitles = $recipe.seeAlsoTitles,\\n    r.ingredientLines = $recipe.ingredientLines,\\n    r.ingredientSections = $recipe.ingredientSections,\\n    r.source = 'valdemarsro.dk',\\n    r.ingestedAt = datetime()\\nWITH r\\nCALL {\\n  WITH r\\n  MATCH (r)-[old:IN_CATEGORY|HAS_TAG|SERVED_WITH|SEE_ALSO]->()\\n  DELETE old\\n}\\nFOREACH (c IN CASE WHEN $recipe.category IS NULL THEN [] ELSE [$recipe.category] END |\\n  MERGE (cat:Category {name: c})\\n  MERGE (r)-[:IN_CATEGORY]->(cat))\\nFOREACH (t IN $recipe.tags |\\n  MERGE (tag:Tag {name: t})\\n  MERGE (r)-[:HAS_TAG]->(tag))\";\nconst CHUNK_CYPHER = \"MATCH (r:Recipe {url: $url})\\nCALL {\\n  WITH r\\n  MATCH (old:Chunk)-[:CHUNK_OF]->(r)\\n  DETACH DELETE old\\n}\\nWITH r\\nUNWIND $chunks AS ch\\nCREATE (c:Chunk {\\n  id: $url + '#' + ch.type,\\n  type: ch.type,\\n  text: ch.text,\\n  source: $url,\\n  recipeTitle: r.title,\\n  embeddingModel: $model\\n})\\nSET c.embedding = [x IN ch.embedding | toFloat(x)]\\nCREATE (c)-[:CHUNK_OF]->(r)\";\nconst LINK_SERVED_CYPHER = \"MATCH (a:Recipe), (b:Recipe)\\nWHERE a <> b AND b.url IN coalesce(a.serveWith, [])\\nMERGE (a)-[:SERVED_WITH]->(b)\";\nconst LINK_SEE_ALSO_CYPHER = \"MATCH (a:Recipe), (b:Recipe)\\nWHERE a <> b AND b.url IN coalesce(a.seeAlso, [])\\nMERGE (a)-[:SEE_ALSO]->(b)\";\n\nreturn {\n  json: {\n    url: base.url,\n    title: base.recipe.title,\n    chunkCount: chunks.length,\n    body: {\n      statements: [\n        { statement: RECIPE_CYPHER, parameters: { url: base.url, recipe: base.recipe } },\n        { statement: CHUNK_CYPHER, parameters: { url: base.url, chunks, model: \"nomic-embed-text\" } },\n        { statement: LINK_SERVED_CYPHER },\n        { statement: LINK_SEE_ALSO_CYPHER },\n      ],\n    },\n  },\n};"
       },
-      "id": "fa41b98f-4026-46a4-8f76-2a887acd2927",
+      "id": "c6fc1e9d-9eca-4991-bdbc-ef478fcac88f",
       "name": "Byg Cypher",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -211,7 +235,7 @@
         "jsonBody": "={{ JSON.stringify($json.body) }}",
         "options": {}
       },
-      "id": "e56ff3d0-be37-4712-92b8-8a1f21c9de76",
+      "id": "cdd32df5-dad0-4d41-8bf3-562e77ff562f",
       "name": "Skriv til Neo4j",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -225,7 +249,7 @@
         "mode": "runOnceForEachItem",
         "jsCode": "// Neo4j's HTTP API svarer 200 selv når Cypher fejler – fejlene ligger i \"errors\".\nconst src = $('Byg Cypher').item.json;\nconst errors = $json.errors || [];\nif (errors.length) {\n  throw new Error(`Neo4j afviste ${src.url}: ` + errors.map((e) => `${e.code}: ${e.message}`).join(' | '));\n}\nreturn { json: { status: 'gemt', title: src.title, url: src.url, chunks: src.chunkCount } };"
       },
-      "id": "62e2a6f8-d81f-4546-affe-915f01d09c2a",
+      "id": "f9497cf6-03a3-4d38-87d8-c3e0d3896a77",
       "name": "Tjek svar",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,

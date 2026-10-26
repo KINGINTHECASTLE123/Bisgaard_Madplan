@@ -1,0 +1,12 @@
+{
+  "name": "bisgaard-madplan",
+  "private": true,
+  "description": "Madplan-agent: RAG i Neo4j (vektor + graf) med n8n og Ollama",
+  "scripts": {
+    "build": "node src/build_workflow.js",
+    "test": "node src/test_parse.js"
+  },
+  "devDependencies": {
+    "cheerio": "1.0.0"
+  }
+}

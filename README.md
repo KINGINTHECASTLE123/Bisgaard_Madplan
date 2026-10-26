@@ -20,7 +20,10 @@ prioriterer retter med ingredienser på tilbud (Prej API) og lærer af mine rati
 | `neo4j/99_reset.cypher` | Sletter alle data (beholder indexes) |
 | `n8n/01_ingest_opskrifter.json` | Workflow: URL'er → hent → parse → chunk → embed → Neo4j |
 | `src/build_recipe.js` | Parsing- og chunking-logikken (samme kode som i n8n's Code-node) |
-| `src/build_workflow.js` | Genererer workflow-JSON'en ud fra `src/` |
+| `src/build_workflow.js` | Genererer workflow-JSON'en ud fra `src/` (`npm run build`) |
+| `src/test_parse.js` | Tester parsingen mod gemte sider i `data/raw/` uden n8n (`npm test`) |
+| `scripts/` | Statustjek, opstart af Neo4j, `cypher.sh` (kør Cypher), `vektorsoeg.mjs` (test vektorsøgning) |
+| `neo4j/10_kontrol.cypher` | Kontrolqueries efter ingestion |
 | `prompts/` | Prompts brugt under udviklingen (projektinstruktioner, startprompt …) |
 | `docs/` | Opgavebeskrivelse, agent-testprompts, screenshots |
 
@@ -58,12 +61,13 @@ MATCH (r:Recipe)-[rel]-(n) RETURN r, rel, n LIMIT 50;
 
 | Label | Nøgle | Egenskaber |
 |---|---|---|
-| `Recipe` | `url` | title, description, servings, totalMinutes, cookMinutes, image, ingredientLines[], ingredientSections[], source, ingestedAt |
+| `Recipe` | `url` | title, description (kun intro-teksten), servings, totalMinutes, cookMinutes, shelfLife, freezable, tips[], image, ingredientLines[], ingredientSections[], serveWith[]/serveWithTitles[], seeAlso[]/seeAlsoTitles[], source, ingestedAt |
 | `Category` | `name` | fx "Aftensmad" (schema.org `recipeCategory`) |
 | `Tag` | `name` | fx "Vegetar", "Mad på budget" (schema.org `keywords`) |
 | `Chunk` | `id` (`url#type`) | type, text, source, recipeTitle, embeddingModel, embedding (768 floats) |
 
-**Relationer**: `(Recipe)-[:IN_CATEGORY]->(Category)`, `(Recipe)-[:HAS_TAG]->(Tag)`, `(Chunk)-[:CHUNK_OF]->(Recipe)`
+**Relationer**: `(Recipe)-[:IN_CATEGORY]->(Category)`, `(Recipe)-[:HAS_TAG]->(Tag)`, `(Chunk)-[:CHUNK_OF]->(Recipe)`,
+`(Recipe)-[:SERVED_WITH]->(Recipe)` ("Forslag til servering") og `(Recipe)-[:SEE_ALSO]->(Recipe)` ("Prøv også") – kun mellem opskrifter, der begge ligger i databasen.
 
 Kommer: `Ingredient` (LLM-normaliseret) med `(Recipe)-[:USES {amount, unit, prep, section}]->(Ingredient)`,
 `Product`/`Chain` fra Prej, samt `MealPlan` og ratings.
@@ -71,6 +75,8 @@ Kommer: `Ingredient` (LLM-normaliseret) med `(Recipe)-[:USES {amount, unit, prep
 ## Designvalg
 
 - **Datakilde**: valdemarsro.dk har intet API, men opskrifterne er opmærket med schema.org-microdata (`itemprop="recipeIngredient"` m.fl.), så udtrækket bruger stabile selectors frem for layoutklasser. Kun en håndplukket liste af mine egne favoritter hentes, med 3 sekunders pause mellem kald og en ærlig User-Agent. robots.txt tillader almindelige crawlere på opskriftssiderne. Den fulde opskriftstekst ligger kun i den lokale database og ikke i repoet; agenten linker altid til originalen.
-- **Chunking efter struktur**: hver opskrift deles i `profil` (titel, beskrivelse, tags, tid), `ingredienser` og `fremgangsmaade` (splittes ved afsnit over 1.200 tegn). Opskrifterne er korte, så struktur giver mere meningsfulde chunks end faste tegn-vinduer, og hver chunk kan matche en bestemt slags spørgsmål.
+- **Chunking efter struktur**: hver opskrift deles i `profil` (titel, intro, kategori, tags, tid, holdbarhed), `ingredienser`, `tips` (fx erstatninger: "hvidløgsflødeost kan erstattes af piskefløde") og `fremgangsmaade` (splittes ved afsnit over 1.200 tegn). Opskrifterne er korte, så struktur giver mere meningsfulde chunks end faste tegn-vinduer, og hver chunk kan matche en bestemt slags spørgsmål.
+- **Faldgrube fundet under test**: elementet med `itemprop="description"` indeholder hele opskriftsboksen. Derfor hentes det som HTML, og kun intro-teksten før `div.post-recipe` bruges. Parsingen testes mod gemte sider med `npm test` (cheerio efterligner n8n's HTML-node).
+- **Næringsindhold** findes på siden, men kun som premium-billede – der er ingen kalorier at hente. "Sundt" vurderes ud fra tags og beskrivelser.
 - **Embeddings**: `nomic-embed-text` via Ollama (lokal, 768 dim). Modellen forventer præfikserne `search_document:` ved indeksering og `search_query:` ved søgning.
 - **Idempotent ingestion**: `MERGE` på URL; gamle tags og chunks slettes og genskabes, så workflowet kan køres igen uden dubletter. Begge Cypher-statements kører i én transaktion via Neo4j's HTTP API.
