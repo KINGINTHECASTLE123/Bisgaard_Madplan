@@ -1,0 +1,134 @@
+{
+  "name": "Tool · opskrifter_med_tag",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Tool · opskrifter_med_tag\nGraf-opslag: opskrifter der har et bestemt tag (fx \"Vegetar\", \"Suppe\", \"Nem Hverdagsmad\").\nTomt tag → liste over alle tags med antal opskrifter.\n\nInput: **tag** (tekst). Output: opskrifter med titel, tid og URL (kilde).",
+        "height": 240,
+        "width": 1000,
+        "color": 5
+      },
+      "id": "1464ab6c-eeef-43fe-ab7e-8b0e4fc11f60",
+      "name": "Beskrivelse",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "tag",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "08e98a70-b59e-4733-ae05-a68640508b40",
+      "name": "Input",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $('Input').first().json;\nconst parameters = { tag: input.tag ?? '' };\nreturn [{ json: { body: { statements: [{ statement: \"WITH trim(coalesce($tag, '')) AS tag\\nCALL (tag) {\\n  WITH tag WHERE tag <> ''\\n  MATCH (r:Recipe)-[:HAS_TAG]->(t:Tag) WHERE toLower(t.name) = toLower(tag)\\n  RETURN 'opskrift' AS kind, r.title AS name, r.totalMinutes AS minutes, r.url AS url\\n  UNION ALL\\n  WITH tag WHERE tag = ''\\n  MATCH (t:Tag)<-[:HAS_TAG]-(r:Recipe)\\n  RETURN 'tag' AS kind, t.name AS name, count(r) AS minutes, null AS url\\n}\\nRETURN kind, name, minutes, url ORDER BY kind, name\", parameters }] } } }];"
+      },
+      "id": "f2282458-cd10-4668-92f3-9e0a5066ea80",
+      "name": "Byg Cypher",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://neo4j:7474/db/neo4j/tx/commit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {}
+      },
+      "id": "3ad26b80-492c-40c5-b1cf-90dcf9307bb9",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "W2oqfWpLx0Y5eXtI",
+          "name": "Neo4j lokal"
+        }
+      },
+      "name": "Neo4j",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $('Input').first().json;\nconst res = $input.first().json;\nif (res.errors?.length) throw new Error(res.errors.map((e) => e.code + ': ' + e.message).join(' | '));\nconst r0 = res.results[0];\nconst rows = r0.data.map((d) => Object.fromEntries(r0.columns.map((c, i) => [c, d.row[i]])));\nconst tag = input.tag ?? '';\nif (!tag.trim()) {\n  return [{ json: { tags: rows.map((r) => ({ tag: r.name, antalOpskrifter: r.minutes })) } }];\n}\nreturn [{ json: {\n  tag,\n  antal: rows.length,\n  opskrifter: rows.map((r) => ({ titel: r.name, minutter: r.minutes, url: r.url })),\n  kilde: 'Neo4j: (Recipe)-[:HAS_TAG]->(Tag)',\n  note: rows.length ? undefined : 'Ingen opskrifter med det tag. Kald med tomt tag for at se de tags, der findes.',\n} }];"
+      },
+      "id": "a2efd3a3-cb63-4f42-bbd8-ed503f143e17",
+      "name": "Formatér svar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Input": {
+      "main": [
+        [
+          {
+            "node": "Byg Cypher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Byg Cypher": {
+      "main": [
+        [
+          {
+            "node": "Neo4j",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Neo4j": {
+      "main": [
+        [
+          {
+            "node": "Formatér svar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "pinData": {}
+}

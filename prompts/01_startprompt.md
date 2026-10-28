@@ -62,3 +62,15 @@ Test `qwen3:8b` mod `qwen3:14b` på tool-calling og vælg. Skriv instruktioner, 
 Den fulde opgavebeskrivelse ligger i `docs/opgavebeskrivelse.md`. Læs den, og sig til, hvis planen har huller i forhold til kravene. Spørg mig også, om projektet skal på GitHub (privat repo med adgang for underviseren) eller uploades som filer på ItsLearning.
 
 Start derefter med trin 0.
+
+---
+
+## Resultat (session 26/10, trin 0–1)
+
+**Hvad prompten gav:** Claude læste instruktioner, opgavebeskrivelse og kode og påpegede huller i planen (Agents builder + Ollama er en risiko og bør testes tidligt; "AI foreslår node-/relationstyper" skal dokumenteres; ratings mangler i skemaet). Derefter blev trin 0 og 1 gennemført i små, verificerede skridt: statusscript, Neo4j op med schema, GitHub-repo, ingestion af 46 favoritter.
+
+**Hvad gik godt:** At teste mod rigtige tjenester afslørede fejl tidligt. Kontrolqueries viste, at `description` indeholdt hele opskriftsboksen (2.904 tegn i stedet for ~500), og en lokal cache af siderne (`data/raw/`) gjorde det muligt at teste parsingen uden n8n (`npm test`).
+
+**Hvad gik galt:** Første skrivning af 46 opskrifter gav `DeadlockDetected` i Neo4j, fordi n8n sendte transaktionerne parallelt. Claudes første rettelse (batching) virkede ikke – batching forsinker kun starten af hver request. Løsningen blev én samlet transaktion. "Credentials not found" skyldtes sandsynligvis, at workflowet ikke var gemt (⌘S) før kørsel; credential-id'et er nu bygget ind i JSON'en.
+
+**Vurdering:** Prompten var stærk, fordi den gav kontekst, færdige filer, en trinvis plan og et krav om at vente på "go" mellem trin. Den manglede et krav om at teste med mere end én opskrift før skalering – det ville have fanget deadlocken tidligere.

@@ -1,0 +1,134 @@
+{
+  "name": "Tool · get_recipe_details",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Tool · get_recipe_details\nGraf-opslag: alle fakta om én opskrift – kategori, tags, ingredienser (med sektion, fx \"Til servering\"), tid, portioner, holdbarhed, om den kan fryses, tips og relaterede opskrifter (\"Prøv også\" = SEE_ALSO, begge retninger).\n\nInput: **recipe** (URL eller titel – også del af titel). Output: fakta + URL (kilde). Fremgangsmåden returneres ikke – link til originalen.",
+        "height": 240,
+        "width": 1000,
+        "color": 5
+      },
+      "id": "9d713fc5-aeab-4a1c-a827-6c9197f3de51",
+      "name": "Beskrivelse",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "recipe",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "6ac2fb69-8a5b-47a3-b1f8-c45371f234c1",
+      "name": "Input",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $('Input').first().json;\nconst parameters = { recipe: input.recipe ?? '' };\nreturn [{ json: { body: { statements: [{ statement: \"WITH trim(coalesce($recipe, '')) AS q\\nMATCH (r:Recipe)\\nWHERE q <> '' AND (r.url = q OR toLower(r.title) CONTAINS toLower(q))\\nWITH r, q ORDER BY (r.url = q) DESC, (toLower(r.title) = toLower(q)) DESC, size(r.title) ASC\\nLIMIT 1\\nRETURN r.title AS titel, r.url AS url,\\n       COLLECT { MATCH (r)-[:IN_CATEGORY]->(c:Category) RETURN c.name }[0] AS kategori,\\n       COLLECT { MATCH (r)-[:HAS_TAG]->(t:Tag) RETURN t.name } AS tags,\\n       r.totalMinutes AS minutterIAlt, r.cookMinutes AS arbejdstid, r.servings AS portioner,\\n       r.shelfLife AS holdbarhed, r.freezable AS kanFryses,\\n       [i IN range(0, size(r.ingredientLines) - 1) |\\n         CASE WHEN r.ingredientSections[i] = '' THEN r.ingredientLines[i]\\n              ELSE r.ingredientLines[i] + ' (' + toLower(r.ingredientSections[i]) + ')' END] AS ingredienser,\\n       r.tips AS tips,\\n       COLLECT { MATCH (r)-[:SEE_ALSO]-(s:Recipe) RETURN DISTINCT s { titel: s.title, url: s.url } } AS relateredeOpskrifter\", parameters }] } } }];"
+      },
+      "id": "e06cec3a-a4a5-4542-96aa-fb2d505b86a2",
+      "name": "Byg Cypher",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://neo4j:7474/db/neo4j/tx/commit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {}
+      },
+      "id": "74f8fde9-7a9b-487d-ac46-9aa7c41606a3",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "W2oqfWpLx0Y5eXtI",
+          "name": "Neo4j lokal"
+        }
+      },
+      "name": "Neo4j",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $('Input').first().json;\nconst res = $input.first().json;\nif (res.errors?.length) throw new Error(res.errors.map((e) => e.code + ': ' + e.message).join(' | '));\nconst r0 = res.results[0];\nconst rows = r0.data.map((d) => Object.fromEntries(r0.columns.map((c, i) => [c, d.row[i]])));\nif (!rows.length) {\n  return [{ json: { fundet: false, recipe: input.recipe,\n    note: 'Ingen opskrift i databasen matcher. Brug search_recipes til at finde den rigtige titel eller URL.' } }];\n}\nreturn [{ json: { fundet: true, ...rows[0],\n  kilde: 'Neo4j: Recipe + IN_CATEGORY, HAS_TAG, SEE_ALSO. Originalopskrift: ' + rows[0].url } }];"
+      },
+      "id": "10915cad-31c4-4a3c-a425-9dc608db2c3d",
+      "name": "Formatér svar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Input": {
+      "main": [
+        [
+          {
+            "node": "Byg Cypher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Byg Cypher": {
+      "main": [
+        [
+          {
+            "node": "Neo4j",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Neo4j": {
+      "main": [
+        [
+          {
+            "node": "Formatér svar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "pinData": {}
+}

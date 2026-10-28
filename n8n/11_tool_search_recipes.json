@@ -1,0 +1,179 @@
+{
+  "name": "Tool · search_recipes",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Tool · search_recipes\nHybrid søgning: vektorsøgning på opskrifternes chunks (profil, ingredienser, tips, fremgangsmåde) med **nomic-embed-text**, samlet pr. opskrift (bedste chunk-score), kombineret med graf-filtre i samme Cypher-query.\n\nInput: **query** (fri tekst, fx \"noget cremet med kylling\"), **maxMinutes** (valgfri, tal), **tag** (valgfri, et eller flere tags adskilt af komma – opskriften skal have mindst ét, fx \"Salat, Vegetar\"), **excludeTag** (valgfri, komma-liste), **k** (antal, standard 5).\nOutput: opskrifter med score, tid, tags, kort beskrivelse og URL (kilde) + hvilken chunk der matchede.",
+        "height": 240,
+        "width": 1000,
+        "color": 5
+      },
+      "id": "cd187b92-abfe-4b58-9d46-ff752bd78be8",
+      "name": "Beskrivelse",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "query",
+              "type": "string"
+            },
+            {
+              "name": "maxMinutes",
+              "type": "number"
+            },
+            {
+              "name": "tag",
+              "type": "string"
+            },
+            {
+              "name": "excludeTag",
+              "type": "string"
+            },
+            {
+              "name": "k",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "id": "8a8da806-a244-4d4d-8268-afc6e45e18f3",
+      "name": "Input",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/embed",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'nomic-embed-text', input: 'search_query: ' + ($json.query || '') }) }}",
+        "options": {}
+      },
+      "id": "cce05af5-6fc8-4846-9e34-bb2063b2afe6",
+      "name": "Embed spørgsmål (Ollama)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $('Input').first().json;\nconst embedding = $('Embed spørgsmål (Ollama)').first().json.embeddings[0];\nconst parameters = {\n  embedding,\n  maxMinutes: Number(input.maxMinutes) > 0 ? Math.round(Number(input.maxMinutes)) : null,\n  tags: String(input.tag || '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean),\n  excludeTags: String(input.excludeTag || '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean),\n  k: Math.min(Math.max(Math.round(Number(input.k) || 5), 1), 15),\n};\nreturn [{ json: { body: { statements: [{ statement: \"CALL db.index.vector.queryNodes('chunk_embedding', 250, $embedding) YIELD node, score\\nWITH node, score ORDER BY score DESC\\nMATCH (node)-[:CHUNK_OF]->(r:Recipe)\\nWITH r, collect({type: node.type, score: score})[0] AS best\\nWHERE ($maxMinutes IS NULL OR r.totalMinutes <= $maxMinutes)\\n  AND (size($tags) = 0 OR EXISTS { (r)-[:HAS_TAG]->(t:Tag) WHERE toLower(t.name) IN $tags })\\n  AND (size($excludeTags) = 0 OR NOT EXISTS { (r)-[:HAS_TAG]->(t:Tag) WHERE toLower(t.name) IN $excludeTags })\\nRETURN r.title AS titel, r.url AS url, round(best.score, 3) AS score, best.type AS matchendeChunk,\\n       r.totalMinutes AS minutter, r.servings AS portioner,\\n       COLLECT { MATCH (r)-[:HAS_TAG]->(t:Tag) RETURN t.name } AS tags,\\n       left(r.description, 220) AS beskrivelse\\nORDER BY score DESC\\nLIMIT $k\", parameters }] } } }];"
+      },
+      "id": "4e077f80-148e-4593-98d1-4b809b4a512f",
+      "name": "Byg Cypher",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://neo4j:7474/db/neo4j/tx/commit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {}
+      },
+      "id": "b1883e35-5142-4ca0-873d-c586ce3b62ef",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "W2oqfWpLx0Y5eXtI",
+          "name": "Neo4j lokal"
+        }
+      },
+      "name": "Neo4j",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $('Input').first().json;\nconst res = $input.first().json;\nif (res.errors?.length) throw new Error(res.errors.map((e) => e.code + ': ' + e.message).join(' | '));\nconst r0 = res.results[0];\nconst rows = r0.data.map((d) => Object.fromEntries(r0.columns.map((c, i) => [c, d.row[i]])));\nconst filtre = [\n  Number(input.maxMinutes) > 0 && 'maks. ' + Number(input.maxMinutes) + ' min',\n  String(input.tag || '').trim() && 'mindst ét af tags: ' + input.tag,\n  String(input.excludeTag || '').trim() && 'uden tags: ' + input.excludeTag,\n].filter(Boolean);\nreturn [{ json: {\n  query: input.query,\n  filtre: filtre.length ? filtre : 'ingen',\n  antal: rows.length,\n  opskrifter: rows,\n  kilde: 'Neo4j: vector index chunk_embedding (nomic-embed-text, cosine) + (Recipe)-[:HAS_TAG]->(Tag), Recipe.totalMinutes',\n  note: rows.length\n    ? 'Score er semantisk lighed (0–1), ikke en garanti for relevans. Link altid til url.'\n    : 'Ingen opskrifter matchede filtrene. Prøv uden maxMinutes/tag.',\n} }];"
+      },
+      "id": "f1ff4a95-80d0-49c8-a5f4-b2ecfb0ee7e0",
+      "name": "Formatér svar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Input": {
+      "main": [
+        [
+          {
+            "node": "Embed spørgsmål (Ollama)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embed spørgsmål (Ollama)": {
+      "main": [
+        [
+          {
+            "node": "Byg Cypher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Byg Cypher": {
+      "main": [
+        [
+          {
+            "node": "Neo4j",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Neo4j": {
+      "main": [
+        [
+          {
+            "node": "Formatér svar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "pinData": {}
+}
