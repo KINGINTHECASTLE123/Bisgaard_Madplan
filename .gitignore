@@ -3,3 +3,4 @@ data/raw/
 data/proxy-log/
 .DS_Store
 node_modules/
+data/normalize/
