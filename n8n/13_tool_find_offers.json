@@ -1,0 +1,134 @@
+{
+  "name": "Tool · find_offers",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Tool · find_offers\nGraf-opslag: hvilke ingredienser i én eller flere opskrifter er på tilbud lige nu (Rema 1000, Netto, SuperBrugsen), via (Recipe)-[:USES]->(Ingredient)<-[:IS_A]-(Product)-[:ON_OFFER]->(Chain). Udløbne tilbud ignoreres.\nBeregner besparelsen pr. kæde for HELE indkøbet og anbefaler én butik (Jacobs præference); en ekstra butik foreslås kun ved ≥ 50 kr. ekstra besparelse.\n\nInput: **recipes** (URL'er eller titler adskilt af komma). Output: tilbud pr. opskrift + kædeoversigt + anbefaling, med tilbudsperiode (kilde: Prej).",
+        "height": 240,
+        "width": 1000,
+        "color": 5
+      },
+      "id": "a289c55e-0b40-498d-8a00-32abcd103b6b",
+      "name": "Beskrivelse",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "recipes",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "c7e59535-d434-4d88-ba4f-1d5c0403dec8",
+      "name": "Input",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $('Input').first().json;\nconst parameters = { recipes: input.recipes ?? '' };\nreturn [{ json: { body: { statements: [{ statement: \"WITH [x IN split(coalesce($recipes, ''), ',') | trim(x)] AS qs\\nUNWIND qs AS q\\nMATCH (r:Recipe) WHERE q <> '' AND (r.url = q OR toLower(r.title) CONTAINS toLower(q))\\nWITH DISTINCT r\\nMATCH (r)-[u:USES]->(i:Ingredient {pantry: false})\\nOPTIONAL MATCH (i)<-[:IS_A]-(p:Product)-[o:ON_OFFER]->(ch:Chain) WHERE o.validTo >= date()\\nWITH r, i, u, collect(CASE WHEN p IS NULL THEN null ELSE {\\n  kaede: ch.slug, kaedeNavn: ch.name, produkt: p.name, stoerrelse: p.quantityLabel,\\n  pris: o.price, normalpris: o.normalPrice, gyldigTil: toString(o.validTo)} END) AS tilbud\\nRETURN r.title AS opskrift, r.url AS url, i.name AS ingrediens, u.raw AS linje, tilbud\\nORDER BY opskrift, ingrediens\", parameters }] } } }];"
+      },
+      "id": "396ebe1f-bff6-44d0-bf23-9bc2c3b90c1b",
+      "name": "Byg Cypher",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://neo4j:7474/db/neo4j/tx/commit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {}
+      },
+      "id": "0b4ab3f5-a0ef-4497-977f-ead4f7d95cc2",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "W2oqfWpLx0Y5eXtI",
+          "name": "Neo4j lokal"
+        }
+      },
+      "name": "Neo4j",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $('Input').first().json;\nconst res = $input.first().json;\nif (res.errors?.length) throw new Error(res.errors.map((e) => e.code + ': ' + e.message).join(' | '));\nconst r0 = res.results[0];\nconst rows = r0.data.map((d) => Object.fromEntries(r0.columns.map((c, i) => [c, d.row[i]])));\nif (!rows.length) {\n  return [{ json: { fundet: false, recipes: input.recipes,\n    note: 'Ingen af opskrifterne blev fundet. Brug url eller titel fra search_recipes.' } }];\n}\nconst kr = (oere) => oere == null ? null : Math.round(oere) / 100;\nconst opskrifter = {};\nconst perKaede = {}; // kaede -> ingrediens -> billigste tilbud\nlet gyldigTil = null;\nfor (const r of rows) {\n  opskrifter[r.url] ??= { opskrift: r.opskrift, url: r.url, ingredienser: 0, paaTilbud: [] };\n  opskrifter[r.url].ingredienser++;\n  if (!r.tilbud.length) continue;\n  const best = {};\n  for (const t of r.tilbud) {\n    if (!best[t.kaede] || t.pris < best[t.kaede].pris) best[t.kaede] = t;\n    perKaede[t.kaede] ??= { navn: t.kaedeNavn, ingredienser: {} };\n    const cur = perKaede[t.kaede].ingredienser[r.ingrediens];\n    if (!cur || t.pris < cur.pris) perKaede[t.kaede].ingredienser[r.ingrediens] = t;\n    if (!gyldigTil || t.gyldigTil < gyldigTil) gyldigTil = t.gyldigTil;\n  }\n  opskrifter[r.url].paaTilbud.push({\n    ingrediens: r.ingrediens, linje: r.linje,\n    tilbud: Object.values(best).map((t) => ({ kaede: t.kaedeNavn, produkt: t.produkt, stoerrelse: t.stoerrelse,\n      pris: kr(t.pris), normalpris: kr(t.normalpris), gyldigTil: t.gyldigTil })),\n  });\n}\nconst kaeder = Object.entries(perKaede).map(([slug, k]) => {\n  const items = Object.entries(k.ingredienser);\n  const besparelse = items.reduce((a, [, t]) => a + (t.normalpris ? t.normalpris - t.pris : 0), 0);\n  return { kaede: k.navn, slug, ingredienserPaaTilbud: items.length, ingredienser: items.map(([i]) => i),\n    samletBesparelseKr: kr(besparelse) };\n}).sort((a, b) => b.samletBesparelseKr - a.samletBesparelseKr || b.ingredienserPaaTilbud - a.ingredienserPaaTilbud);\nlet anbefaling = 'Ingen ingredienser er på tilbud i Rema 1000, Netto eller SuperBrugsen lige nu.';\nlet ekstraButik = null;\nif (kaeder.length) {\n  const b = kaeder[0];\n  anbefaling = 'Handl i ' + b.kaede + ': ' + b.ingredienserPaaTilbud + ' ingrediens(er) på tilbud, ca. ' + b.samletBesparelseKr + ' kr sparet.';\n  for (const k of kaeder.slice(1)) {\n    const ekstra = Object.entries(perKaede[k.slug].ingredienser)\n      .filter(([i]) => !perKaede[b.slug].ingredienser[i])\n      .reduce((a, [, t]) => a + (t.normalpris ? t.normalpris - t.pris : 0), 0);\n    if (ekstra >= 5000) { ekstraButik = 'Det kan betale sig også at handle i ' + k.kaede + ' (ca. ' + kr(ekstra) + ' kr ekstra besparelse).'; break; }\n  }\n}\nreturn [{ json: {\n  fundet: true,\n  opskrifter: Object.values(opskrifter),\n  kaeder,\n  anbefaling,\n  ekstraButik: ekstraButik || 'Ikke værd at tage en ekstra butik med (under 50 kr ekstra besparelse).',\n  tilbudGyldigTil: gyldigTil,\n  kilde: 'Prej API (hentet til Neo4j), (Recipe)-[:USES]->(Ingredient)<-[:IS_A]-(Product)-[:ON_OFFER]->(Chain). Priser er pr. pakke, ikke pr. opskriftsmængde. Basisvarer (salt, olie, krydderier) er ikke med.',\n} }];"
+      },
+      "id": "e902f015-28cf-40f1-8494-cea33339f0e2",
+      "name": "Formatér svar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Input": {
+      "main": [
+        [
+          {
+            "node": "Byg Cypher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Byg Cypher": {
+      "main": [
+        [
+          {
+            "node": "Neo4j",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Neo4j": {
+      "main": [
+        [
+          {
+            "node": "Formatér svar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "pinData": {}
+}

@@ -6,7 +6,7 @@
 // som Ollama afviser med 400 "unknown input item type". Proxyen fjerner de henvisninger, før requesten
 // sendes videre. Alt andet sendes uændret. Hver request + svar gemmes i data/proxy-log/ (ikke i git).
 //
-// Kør:  node scripts/ollama_proxy.mjs      (stop med Ctrl+C)
+// Kør:  node scripts/ollama-eksperiment/ollama_proxy.mjs      (stop med Ctrl+C)
 // n8n-credential (OpenAI): Base URL = http://host.docker.internal:11435/v1, API key = ollama
 import http from 'node:http';
 const UPSTREAM_HOST = process.env.OLLAMA_UPSTREAM_HOST || '127.0.0.1';
@@ -16,7 +16,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const logDir = path.join(root, 'data', 'proxy-log');
 fs.mkdirSync(logDir, { recursive: true });
 let n = 0;

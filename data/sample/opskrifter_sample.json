@@ -1,0 +1,905 @@
+[
+  {
+    "titel": "Bønnegryde",
+    "url": "https://www.valdemarsro.dk/boennegryde/",
+    "kategori": "Aftensmad",
+    "tags": [
+      "Bålmad",
+      "Simremad",
+      "Mad på budget",
+      "One Pot retter",
+      "Mexicansk",
+      "Vegetar",
+      "Familiefavoritter",
+      "Gryderetter",
+      "Børnenes livretter",
+      "Nem Hverdagsmad"
+    ],
+    "minutterIAlt": 30,
+    "portioner": 4,
+    "ingredienser": [
+      {
+        "ingrediens": "mediumstærk karry",
+        "basisvare": true,
+        "maengde": 2,
+        "enhed": "tsk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "spidskommen",
+        "basisvare": true,
+        "maengde": 2,
+        "enhed": "tsk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "kardemomme",
+        "basisvare": true,
+        "maengde": 0.5,
+        "enhed": "tsk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "kanel",
+        "basisvare": true,
+        "maengde": 0.5,
+        "enhed": "tsk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "røget paprika",
+        "basisvare": true,
+        "maengde": 0.5,
+        "enhed": "tsk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "stødt koriander",
+        "basisvare": true,
+        "maengde": 2,
+        "enhed": "tsk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "løg",
+        "basisvare": false,
+        "maengde": 3,
+        "enhed": "stk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "hvidløg",
+        "basisvare": false,
+        "maengde": 4,
+        "enhed": "fed",
+        "sektion": null
+      },
+      {
+        "ingrediens": "ingefær",
+        "basisvare": false,
+        "maengde": 1,
+        "enhed": "tsk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "squash",
+        "basisvare": false,
+        "maengde": 1,
+        "enhed": "stk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "bladselleri",
+        "basisvare": false,
+        "maengde": 3,
+        "enhed": "stk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "hakkede tomater",
+        "basisvare": false,
+        "maengde": 400,
+        "enhed": "g",
+        "sektion": null
+      },
+      {
+        "ingrediens": "grøntsagsbouillon",
+        "basisvare": false,
+        "maengde": 3,
+        "enhed": "dl",
+        "sektion": null
+      },
+      {
+        "ingrediens": "kidneybønner",
+        "basisvare": false,
+        "maengde": 2,
+        "enhed": "dåse",
+        "sektion": null
+      },
+      {
+        "ingrediens": "rød peberfrugt",
+        "basisvare": false,
+        "maengde": 1,
+        "enhed": "stk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "majs",
+        "basisvare": false,
+        "maengde": 250,
+        "enhed": "g",
+        "sektion": null
+      },
+      {
+        "ingrediens": "mørk chokolade",
+        "basisvare": false,
+        "maengde": 25,
+        "enhed": "g",
+        "sektion": null
+      },
+      {
+        "ingrediens": "olivenolie",
+        "basisvare": true,
+        "maengde": 1,
+        "enhed": "tsk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "peber",
+        "basisvare": true,
+        "maengde": null,
+        "enhed": null,
+        "sektion": null
+      },
+      {
+        "ingrediens": "salt",
+        "basisvare": true,
+        "maengde": null,
+        "enhed": null,
+        "sektion": null
+      },
+      {
+        "ingrediens": "cremefraiche",
+        "basisvare": false,
+        "maengde": 1,
+        "enhed": "dl",
+        "sektion": "Tilbehør"
+      },
+      {
+        "ingrediens": "koriander",
+        "basisvare": false,
+        "maengde": 1,
+        "enhed": "håndfuld",
+        "sektion": "Tilbehør"
+      },
+      {
+        "ingrediens": "nachos",
+        "basisvare": false,
+        "maengde": 125,
+        "enhed": "g",
+        "sektion": "Tilbehør"
+      },
+      {
+        "ingrediens": "rødløg",
+        "basisvare": false,
+        "maengde": null,
+        "enhed": "stk",
+        "sektion": "Tilbehør"
+      },
+      {
+        "ingrediens": "majs",
+        "basisvare": false,
+        "maengde": 150,
+        "enhed": "g",
+        "sektion": "Tilbehør"
+      },
+      {
+        "ingrediens": "avocado",
+        "basisvare": false,
+        "maengde": 1,
+        "enhed": "stk",
+        "sektion": "Tilbehør"
+      }
+    ],
+    "proevOgsaa": [
+      "Gryderet med kylling",
+      "Rösti med grønt og feta"
+    ],
+    "chunks": [
+      "ingredienser",
+      "profil",
+      "tips",
+      "fremgangsmaade"
+    ]
+  },
+  {
+    "titel": "Chili con carne",
+    "url": "https://www.valdemarsro.dk/chili-con-carne/",
+    "kategori": "Aftensmad",
+    "tags": [
+      "Mexicansk",
+      "Natmad",
+      "Børnenes livretter",
+      "Vinter",
+      "Efterår",
+      "Nem Hverdagsmad",
+      "Gryderetter",
+      "Bålmad",
+      "Familiefavoritter"
+    ],
+    "minutterIAlt": 20,
+    "portioner": 4,
+    "ingredienser": [
+      {
+        "ingrediens": "spidskommen",
+        "basisvare": true,
+        "maengde": 1,
+        "enhed": "tsk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "kanel",
+        "basisvare": true,
+        "maengde": 1,
+        "enhed": "tsk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "stødt koriander",
+        "basisvare": true,
+        "maengde": 1,
+        "enhed": "tsk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "chiliflager",
+        "basisvare": true,
+        "maengde": 0.5,
+        "enhed": "tsk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "hvidløg",
+        "basisvare": false,
+        "maengde": 2,
+        "enhed": "fed",
+        "sektion": null
+      },
+      {
+        "ingrediens": "løg",
+        "basisvare": false,
+        "maengde": 2,
+        "enhed": "stk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "hakket oksekød",
+        "basisvare": false,
+        "maengde": 350,
+        "enhed": "g",
+        "sektion": null
+      },
+      {
+        "ingrediens": "hakkede tomater",
+        "basisvare": false,
+        "maengde": 400,
+        "enhed": "g",
+        "sektion": null
+      },
+      {
+        "ingrediens": "soltørrede tomater i olie",
+        "basisvare": false,
+        "maengde": 3,
+        "enhed": "spsk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "oksebouillon",
+        "basisvare": false,
+        "maengde": 1,
+        "enhed": "dl",
+        "sektion": null
+      },
+      {
+        "ingrediens": "kidneybønner",
+        "basisvare": false,
+        "maengde": 2,
+        "enhed": "dåse",
+        "sektion": null
+      },
+      {
+        "ingrediens": "mørk chokolade",
+        "basisvare": false,
+        "maengde": 40,
+        "enhed": "g",
+        "sektion": null
+      },
+      {
+        "ingrediens": "olivenolie",
+        "basisvare": true,
+        "maengde": 3,
+        "enhed": "spsk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "salt",
+        "basisvare": true,
+        "maengde": null,
+        "enhed": null,
+        "sektion": null
+      },
+      {
+        "ingrediens": "peber",
+        "basisvare": true,
+        "maengde": null,
+        "enhed": null,
+        "sektion": null
+      },
+      {
+        "ingrediens": "nachos",
+        "basisvare": false,
+        "maengde": 125,
+        "enhed": "g",
+        "sektion": "Til servering"
+      },
+      {
+        "ingrediens": "ris",
+        "basisvare": false,
+        "maengde": 3,
+        "enhed": "dl",
+        "sektion": "Til servering"
+      },
+      {
+        "ingrediens": "cremefraiche",
+        "basisvare": false,
+        "maengde": 2,
+        "enhed": "dl",
+        "sektion": "Til servering"
+      },
+      {
+        "ingrediens": "cheddar",
+        "basisvare": false,
+        "maengde": 150,
+        "enhed": "g",
+        "sektion": "Til servering"
+      },
+      {
+        "ingrediens": "koriander",
+        "basisvare": false,
+        "maengde": 1,
+        "enhed": "håndfuld",
+        "sektion": "Til servering"
+      },
+      {
+        "ingrediens": "rød chili",
+        "basisvare": false,
+        "maengde": 1,
+        "enhed": "stk",
+        "sektion": "Til servering"
+      }
+    ],
+    "proevOgsaa": [
+      "Tex Mex Salat"
+    ],
+    "chunks": [
+      "fremgangsmaade",
+      "tips",
+      "ingredienser",
+      "profil"
+    ]
+  },
+  {
+    "titel": "Kylling i cremet sennepssauce",
+    "url": "https://www.valdemarsro.dk/kylling-cremet-sennepssauce/",
+    "kategori": "Aftensmad",
+    "tags": [
+      "Gryderetter",
+      "Festmad",
+      "Franske retter",
+      "Familiefavoritter",
+      "Nem Hverdagsmad",
+      "Efterår",
+      "Børnenes livretter"
+    ],
+    "minutterIAlt": 30,
+    "portioner": 4,
+    "ingredienser": [
+      {
+        "ingrediens": "hvedemel",
+        "basisvare": true,
+        "maengde": 25,
+        "enhed": "g",
+        "sektion": "Stegt kyllingebryst"
+      },
+      {
+        "ingrediens": "kyllingebryst",
+        "basisvare": false,
+        "maengde": 600,
+        "enhed": "g",
+        "sektion": "Stegt kyllingebryst"
+      },
+      {
+        "ingrediens": "smør",
+        "basisvare": false,
+        "maengde": 25,
+        "enhed": "g",
+        "sektion": "Stegt kyllingebryst"
+      },
+      {
+        "ingrediens": "olivenolie",
+        "basisvare": true,
+        "maengde": 1,
+        "enhed": "spsk",
+        "sektion": "Stegt kyllingebryst"
+      },
+      {
+        "ingrediens": "peber",
+        "basisvare": true,
+        "maengde": null,
+        "enhed": null,
+        "sektion": "Stegt kyllingebryst"
+      },
+      {
+        "ingrediens": "salt",
+        "basisvare": true,
+        "maengde": null,
+        "enhed": null,
+        "sektion": "Stegt kyllingebryst"
+      },
+      {
+        "ingrediens": "bacon",
+        "basisvare": false,
+        "maengde": 75,
+        "enhed": "g",
+        "sektion": "Cremet sennepssauce"
+      },
+      {
+        "ingrediens": "løg",
+        "basisvare": false,
+        "maengde": 1,
+        "enhed": "stk",
+        "sektion": "Cremet sennepssauce"
+      },
+      {
+        "ingrediens": "hvidløg",
+        "basisvare": false,
+        "maengde": 1,
+        "enhed": "fed",
+        "sektion": "Cremet sennepssauce"
+      },
+      {
+        "ingrediens": "piskefløde",
+        "basisvare": false,
+        "maengde": 2.5,
+        "enhed": "dl",
+        "sektion": "Cremet sennepssauce"
+      },
+      {
+        "ingrediens": "majsstivelse",
+        "basisvare": true,
+        "maengde": 1,
+        "enhed": "spsk",
+        "sektion": "Cremet sennepssauce"
+      },
+      {
+        "ingrediens": "grøntsagsbouillon",
+        "basisvare": false,
+        "maengde": 1,
+        "enhed": "dl",
+        "sektion": "Cremet sennepssauce"
+      },
+      {
+        "ingrediens": "hvidvin",
+        "basisvare": false,
+        "maengde": 1,
+        "enhed": "dl",
+        "sektion": "Cremet sennepssauce"
+      },
+      {
+        "ingrediens": "grov sennep",
+        "basisvare": false,
+        "maengde": 2,
+        "enhed": "spsk",
+        "sektion": "Cremet sennepssauce"
+      },
+      {
+        "ingrediens": "dijon sennep",
+        "basisvare": false,
+        "maengde": 1,
+        "enhed": "spsk",
+        "sektion": "Cremet sennepssauce"
+      },
+      {
+        "ingrediens": "estragon",
+        "basisvare": false,
+        "maengde": 0.5,
+        "enhed": "dl",
+        "sektion": "Cremet sennepssauce"
+      },
+      {
+        "ingrediens": "peber",
+        "basisvare": true,
+        "maengde": null,
+        "enhed": null,
+        "sektion": "Cremet sennepssauce"
+      },
+      {
+        "ingrediens": "salt",
+        "basisvare": true,
+        "maengde": null,
+        "enhed": null,
+        "sektion": "Cremet sennepssauce"
+      },
+      {
+        "ingrediens": "basmatiris",
+        "basisvare": false,
+        "maengde": 3,
+        "enhed": "dl",
+        "sektion": "Til servering"
+      },
+      {
+        "ingrediens": "haricots verts",
+        "basisvare": false,
+        "maengde": 400,
+        "enhed": "g",
+        "sektion": "Til servering"
+      },
+      {
+        "ingrediens": "citron",
+        "basisvare": false,
+        "maengde": 0.5,
+        "enhed": "stk",
+        "sektion": "Til servering"
+      },
+      {
+        "ingrediens": "hampefrø",
+        "basisvare": false,
+        "maengde": 1,
+        "enhed": "spsk",
+        "sektion": "Til servering"
+      },
+      {
+        "ingrediens": "olivenolie",
+        "basisvare": true,
+        "maengde": 1,
+        "enhed": "tsk",
+        "sektion": "Til servering"
+      },
+      {
+        "ingrediens": "peber",
+        "basisvare": true,
+        "maengde": null,
+        "enhed": null,
+        "sektion": "Til servering"
+      },
+      {
+        "ingrediens": "salt",
+        "basisvare": true,
+        "maengde": null,
+        "enhed": null,
+        "sektion": "Til servering"
+      }
+    ],
+    "proevOgsaa": [
+      "Frikadeller med pandesauce, agurk og kartofler",
+      "Millionbøf",
+      "Spaghetti Bolognese",
+      "Lasagne"
+    ],
+    "chunks": [
+      "fremgangsmaade-2",
+      "profil",
+      "fremgangsmaade-1",
+      "ingredienser",
+      "tips"
+    ]
+  },
+  {
+    "titel": "Lasagne",
+    "url": "https://www.valdemarsro.dk/lasagne/",
+    "kategori": "Aftensmad",
+    "tags": [
+      "Efterår",
+      "Børnenes livretter",
+      "Familiefavoritter",
+      "Pasta",
+      "Simremad",
+      "Italiensk",
+      "Vinter"
+    ],
+    "minutterIAlt": 40,
+    "portioner": 4,
+    "ingredienser": [
+      {
+        "ingrediens": "løg",
+        "basisvare": false,
+        "maengde": 2,
+        "enhed": "stk",
+        "sektion": "Lasagnesauce"
+      },
+      {
+        "ingrediens": "hvidløg",
+        "basisvare": false,
+        "maengde": 4,
+        "enhed": "fed",
+        "sektion": "Lasagnesauce"
+      },
+      {
+        "ingrediens": "hakket oksekød",
+        "basisvare": false,
+        "maengde": 400,
+        "enhed": "g",
+        "sektion": "Lasagnesauce"
+      },
+      {
+        "ingrediens": "tørret oregano",
+        "basisvare": true,
+        "maengde": 2,
+        "enhed": "tsk",
+        "sektion": "Lasagnesauce"
+      },
+      {
+        "ingrediens": "tørret timian",
+        "basisvare": true,
+        "maengde": 1,
+        "enhed": "tsk",
+        "sektion": "Lasagnesauce"
+      },
+      {
+        "ingrediens": "gulerod",
+        "basisvare": false,
+        "maengde": 4,
+        "enhed": "stk",
+        "sektion": "Lasagnesauce"
+      },
+      {
+        "ingrediens": "bladselleri",
+        "basisvare": false,
+        "maengde": 5,
+        "enhed": "stk",
+        "sektion": "Lasagnesauce"
+      },
+      {
+        "ingrediens": "squash",
+        "basisvare": false,
+        "maengde": 1,
+        "enhed": "stk",
+        "sektion": "Lasagnesauce"
+      },
+      {
+        "ingrediens": "tomatpuré",
+        "basisvare": false,
+        "maengde": 50,
+        "enhed": "g",
+        "sektion": "Lasagnesauce"
+      },
+      {
+        "ingrediens": "hakkede tomater",
+        "basisvare": false,
+        "maengde": 800,
+        "enhed": "g",
+        "sektion": "Lasagnesauce"
+      },
+      {
+        "ingrediens": "rødvin",
+        "basisvare": false,
+        "maengde": 1,
+        "enhed": "dl",
+        "sektion": "Lasagnesauce"
+      },
+      {
+        "ingrediens": "olivenolie",
+        "basisvare": true,
+        "maengde": 2,
+        "enhed": "spsk",
+        "sektion": "Lasagnesauce"
+      },
+      {
+        "ingrediens": "peber",
+        "basisvare": true,
+        "maengde": null,
+        "enhed": null,
+        "sektion": "Lasagnesauce"
+      },
+      {
+        "ingrediens": "salt",
+        "basisvare": true,
+        "maengde": null,
+        "enhed": null,
+        "sektion": "Lasagnesauce"
+      },
+      {
+        "ingrediens": "smør",
+        "basisvare": false,
+        "maengde": 2,
+        "enhed": "spsk",
+        "sektion": "Mornaysauce"
+      },
+      {
+        "ingrediens": "hvedemel",
+        "basisvare": true,
+        "maengde": 2,
+        "enhed": "spsk",
+        "sektion": "Mornaysauce"
+      },
+      {
+        "ingrediens": "mælk",
+        "basisvare": false,
+        "maengde": 3,
+        "enhed": "dl",
+        "sektion": "Mornaysauce"
+      },
+      {
+        "ingrediens": "muskatnød",
+        "basisvare": true,
+        "maengde": 1,
+        "enhed": "knivspids",
+        "sektion": "Mornaysauce"
+      },
+      {
+        "ingrediens": "mozzarella",
+        "basisvare": false,
+        "maengde": 125,
+        "enhed": "g",
+        "sektion": "Mornaysauce"
+      },
+      {
+        "ingrediens": "salt",
+        "basisvare": true,
+        "maengde": null,
+        "enhed": null,
+        "sektion": "Mornaysauce"
+      },
+      {
+        "ingrediens": "peber",
+        "basisvare": true,
+        "maengde": null,
+        "enhed": null,
+        "sektion": "Mornaysauce"
+      },
+      {
+        "ingrediens": "lasagneplader",
+        "basisvare": false,
+        "maengde": 200,
+        "enhed": "g",
+        "sektion": "Derudover"
+      },
+      {
+        "ingrediens": "mozzarella",
+        "basisvare": false,
+        "maengde": 125,
+        "enhed": "g",
+        "sektion": "Derudover"
+      }
+    ],
+    "proevOgsaa": [
+      "Marry Me Chicken",
+      "Cheeseburger Tacos",
+      "Frikadeller med pandesauce, agurk og kartofler",
+      "Hakkebøffer med bløde løg",
+      "Kålfad med hakket oksekød",
+      "Kylling i cremet sennepssauce"
+    ],
+    "chunks": [
+      "tips",
+      "ingredienser",
+      "fremgangsmaade",
+      "profil"
+    ]
+  },
+  {
+    "titel": "Porresuppe",
+    "url": "https://www.valdemarsro.dk/porresuppe/",
+    "kategori": "Aftensmad",
+    "tags": [
+      "Mad på budget",
+      "Nem Hverdagsmad",
+      "Vegetar",
+      "Suppe"
+    ],
+    "minutterIAlt": 30,
+    "portioner": 4,
+    "ingredienser": [
+      {
+        "ingrediens": "porre",
+        "basisvare": false,
+        "maengde": 500,
+        "enhed": "g",
+        "sektion": null
+      },
+      {
+        "ingrediens": "hvidløg",
+        "basisvare": false,
+        "maengde": 3,
+        "enhed": "fed",
+        "sektion": null
+      },
+      {
+        "ingrediens": "tørret timian",
+        "basisvare": true,
+        "maengde": 2,
+        "enhed": "tsk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "grønne linser",
+        "basisvare": false,
+        "maengde": 1,
+        "enhed": "dåse",
+        "sektion": null
+      },
+      {
+        "ingrediens": "grøntsagsbouillon",
+        "basisvare": false,
+        "maengde": 1.5,
+        "enhed": "l",
+        "sektion": null
+      },
+      {
+        "ingrediens": "citron",
+        "basisvare": false,
+        "maengde": 0.5,
+        "enhed": "stk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "flødeost med hvidløg",
+        "basisvare": false,
+        "maengde": 75,
+        "enhed": "g",
+        "sektion": null
+      },
+      {
+        "ingrediens": "olivenolie",
+        "basisvare": true,
+        "maengde": 2,
+        "enhed": "spsk",
+        "sektion": null
+      },
+      {
+        "ingrediens": "peber",
+        "basisvare": true,
+        "maengde": null,
+        "enhed": null,
+        "sektion": null
+      },
+      {
+        "ingrediens": "salt",
+        "basisvare": true,
+        "maengde": null,
+        "enhed": null,
+        "sektion": null
+      },
+      {
+        "ingrediens": "cremefraiche",
+        "basisvare": false,
+        "maengde": 1,
+        "enhed": "dl",
+        "sektion": "Til servering"
+      },
+      {
+        "ingrediens": "purløg",
+        "basisvare": false,
+        "maengde": 1,
+        "enhed": "håndfuld",
+        "sektion": "Til servering"
+      },
+      {
+        "ingrediens": "rugbrød",
+        "basisvare": false,
+        "maengde": 4,
+        "enhed": "skive",
+        "sektion": "Til servering"
+      }
+    ],
+    "proevOgsaa": [
+      "Kartoffelsuppe"
+    ],
+    "chunks": [
+      "tips",
+      "fremgangsmaade",
+      "profil",
+      "ingredienser"
+    ]
+  }
+]

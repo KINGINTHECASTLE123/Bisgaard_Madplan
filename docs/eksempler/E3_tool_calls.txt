@@ -1,0 +1,1257 @@
+# E3 · Tool-kald (kopieret fra n8n Agents builder → chat "Madplan for fem hverdage")
+# Spørgsmål: "Lav en madplan for 5 hverdage med én vegetardag. Max 45 minutter pr. ret. Hvor skal jeg handle?"
+# Rækkefølge: 1-3) Anthropic.tool search ×3  4) tool-search-recipes, vegetar (execution 101)
+#             5) tool-search-recipes, kød/fisk (execution 102)  6) tool-find-offers (execution 103)
+# Opskrifternes beskrivelser er fjernet (forfatterens tekst ligger kun i den lokale database).
+
+Input
+{
+  "query": "tool-search-recipes opskrifter"
+}
+Output
+[
+  {
+    "type": "tool_reference",
+    "toolName": "tool-search-recipes"
+  },
+  {
+    "type": "tool_reference",
+    "toolName": "tool-get-recipe-details"
+  },
+  {
+    "type": "tool_reference",
+    "toolName": "tool-opskrifter-med-tag"
+  },
+  {
+    "type": "tool_reference",
+    "toolName": "tool-find-offers"
+  }
+]
+Input
+{
+  "query": "tool-find-offers tilbud"
+}
+Output
+[
+  {
+    "type": "tool_reference",
+    "toolName": "tool-find-offers"
+  },
+  {
+    "type": "tool_reference",
+    "toolName": "tool-search-recipes"
+  }
+]
+Input
+{
+  "query": "tool-opskrifter-med-tag vegetar"
+}
+Output
+[
+  {
+    "type": "tool_reference",
+    "toolName": "tool-opskrifter-med-tag"
+  },
+  {
+    "type": "tool_reference",
+    "toolName": "tool-search-recipes"
+  }
+]
+Input
+{
+  "query": "vegetar hverdagsmad aftensmad",
+  "maxMinutes": 45,
+  "tag": "Vegetar",
+  "preferOffers": true,
+  "k": 8
+}
+Output
+{
+  "executionId": "101",
+  "status": "success",
+  "data": {
+    "Formatér svar": [
+      {
+        "query": "vegetar hverdagsmad aftensmad",
+        "filtre": [
+          "maks. 45 min",
+          "mindst ét af tags: Vegetar",
+          "sorteret efter ingredienser på tilbud"
+        ],
+        "antal": 6,
+        "opskrifter": [
+          {
+            "titel": "Bønnegryde",
+            "url": "https://www.valdemarsro.dk/boennegryde/",
+            "score": 0.837,
+            "matchendeChunk": "profil",
+            "minutter": 30,
+            "portioner": 4,
+            "tags": [
+              "Bålmad",
+              "Simremad",
+              "Mad på budget",
+              "One Pot retter",
+              "Mexicansk",
+              "Vegetar",
+              "Familiefavoritter",
+              "Gryderetter",
+              "Børnenes livretter",
+              "Nem Hverdagsmad"
+            ],
+            "ingredienserPaaTilbud": [
+              "squash",
+              "rød peberfrugt",
+              "avocado",
+              "hakkede tomater",
+              "løg"
+            ]
+          },
+          {
+            "titel": "Tex Mex Salat",
+            "url": "https://www.valdemarsro.dk/tex-mex-salat/",
+            "score": 0.802,
+            "matchendeChunk": "profil",
+            "minutter": 20,
+            "portioner": 4,
+            "tags": [
+              "Salat",
+              "Mexicansk",
+              "Måltidssalat og bowls",
+              "Vegetar",
+              "Mad på budget"
+            ],
+            "ingredienserPaaTilbud": [
+              "hakkede tomater",
+              "løg",
+              "avocado",
+              "cheddar"
+            ]
+          },
+          {
+            "titel": "Red Thai Curry",
+            "url": "https://www.valdemarsro.dk/red-thai-curry/",
+            "score": 0.794,
+            "matchendeChunk": "profil",
+            "minutter": 20,
+            "portioner": 4,
+            "tags": [
+              "Mad på budget",
+              "Nem Hverdagsmad",
+              "Vegetar",
+              "Asiatisk"
+            ],
+            "ingredienserPaaTilbud": [
+              "kartoffel",
+              "løg",
+              "squash",
+              "gulerod"
+            ]
+          },
+          {
+            "titel": "Rösti med grønt og feta",
+            "url": "https://www.valdemarsro.dk/rosti-med-groent/",
+            "score": 0.811,
+            "matchendeChunk": "fremgangsmaade",
+            "minutter": 30,
+            "portioner": 4,
+            "tags": [
+              "Mad på budget",
+              "Vegetar"
+            ],
+            "ingredienserPaaTilbud": [
+              "squash",
+              "spinat",
+              "avocado"
+            ]
+          },
+          {
+            "titel": "Vodka Pasta",
+            "url": "https://www.valdemarsro.dk/vodka-pasta/",
+            "score": 0.792,
+            "matchendeChunk": "profil",
+            "minutter": 15,
+            "portioner": 4,
+            "tags": [
+              "Mad på budget",
+              "Vegetar",
+              "Italiensk",
+              "Studenterfester og studenterkørsel",
+              "Familiefavoritter",
+              "Pasta"
+            ],
+            "ingredienserPaaTilbud": [
+              "tomatpuré",
+              "flåede tomater",
+              "løg"
+            ]
+          },
+          {
+            "titel": "Porresuppe",
+            "url": "https://www.valdemarsro.dk/porresuppe/",
+            "score": 0.811,
+            "matchendeChunk": "profil",
+            "minutter": 30,
+            "portioner": 4,
+            "tags": [
+              "Mad på budget",
+              "Nem Hverdagsmad",
+              "Vegetar",
+              "Suppe"
+            ],
+            "ingredienserPaaTilbud": [
+              "porre"
+            ]
+          }
+        ],
+        "kilde": "Neo4j: vector index chunk_embedding (nomic-embed-text, cosine) + (Recipe)-[:HAS_TAG]->(Tag), Recipe.totalMinutes + aktive tilbud (Recipe)-[:USES]->(Ingredient)<-[:IS_A]-(Product)-[:ON_OFFER]->(Chain)",
+        "note": "Score er semantisk lighed (0–1), ikke en garanti for relevans. Link altid til url."
+      }
+    ]
+  }
+}
+Input
+{
+  "query": "hverdagsmad med kød eller fisk, gryderet, pasta, suppe, tex-mex",
+  "maxMinutes": 45,
+  "preferOffers": true,
+  "k": 15
+}
+Output
+{
+  "executionId": "102",
+  "status": "success",
+  "data": {
+    "Formatér svar": [
+      {
+        "query": "hverdagsmad med kød eller fisk, gryderet, pasta, suppe, tex-mex",
+        "filtre": [
+          "maks. 45 min",
+          "sorteret efter ingredienser på tilbud"
+        ],
+        "antal": 15,
+        "opskrifter": [
+          {
+            "titel": "Lasagne",
+            "url": "https://www.valdemarsro.dk/lasagne/",
+            "score": 0.844,
+            "matchendeChunk": "fremgangsmaade",
+            "minutter": 40,
+            "portioner": 4,
+            "tags": [
+              "Efterår",
+              "Børnenes livretter",
+              "Familiefavoritter",
+              "Pasta",
+              "Simremad",
+              "Italiensk",
+              "Vinter"
+            ],
+            "ingredienserPaaTilbud": [
+              "hakket oksekød",
+              "mælk",
+              "gulerod",
+              "squash",
+              "tomatpuré",
+              "løg",
+              "mozzarella",
+              "smør",
+              "hakkede tomater"
+            ]
+          },
+          {
+            "titel": "Texmex risret med oksekød",
+            "url": "https://www.valdemarsro.dk/texmex-risret-med-oksekoed/",
+            "score": 0.869,
+            "matchendeChunk": "fremgangsmaade",
+            "minutter": 35,
+            "portioner": 4,
+            "tags": [
+              "Nem Hverdagsmad",
+              "Bålmad",
+              "Familiefavoritter",
+              "Mexicansk",
+              "Børnenes livretter"
+            ],
+            "ingredienserPaaTilbud": [
+              "gulerod",
+              "cheddar",
+              "hakket oksekød",
+              "hakkede tomater",
+              "sorte bønner",
+              "avocado",
+              "løg",
+              "squash"
+            ]
+          },
+          {
+            "titel": "Kylling i fad med pikant og grøntsager",
+            "url": "https://www.valdemarsro.dk/kylling-fad/",
+            "score": 0.842,
+            "matchendeChunk": "fremgangsmaade",
+            "minutter": 15,
+            "portioner": 4,
+            "tags": [
+              "Familiefavoritter",
+              "Mad i fad og ovnretter",
+              "Nem Hverdagsmad"
+            ],
+            "ingredienserPaaTilbud": [
+              "bacon",
+              "rød peberfrugt",
+              "løg",
+              "porre",
+              "tomatpuré",
+              "kyllingebryst",
+              "hakkede tomater",
+              "smør"
+            ]
+          },
+          {
+            "titel": "Millionbøf",
+            "url": "https://www.valdemarsro.dk/millionboef/",
+            "score": 0.839,
+            "matchendeChunk": "fremgangsmaade",
+            "minutter": 25,
+            "portioner": 4,
+            "tags": [
+              "Nem Hverdagsmad",
+              "Familiefavoritter",
+              "Mad på budget",
+              "Børnenes livretter"
+            ],
+            "ingredienserPaaTilbud": [
+              "kartoffel",
+              "mælk",
+              "hakket oksekød",
+              "smør",
+              "squash",
+              "gulerod",
+              "tomatpuré",
+              "løg"
+            ]
+          },
+          {
+            "titel": "Mexicansk suppe med oksekød",
+            "url": "https://www.valdemarsro.dk/mexicansk-suppe-med-oksekoed/",
+            "score": 0.898,
+            "matchendeChunk": "profil",
+            "minutter": 30,
+            "portioner": 4,
+            "tags": [
+              "Familiefavoritter",
+              "Suppe",
+              "One Pot retter",
+              "Mexicansk",
+              "Nem Hverdagsmad"
+            ],
+            "ingredienserPaaTilbud": [
+              "sorte bønner",
+              "gulerod",
+              "hakket oksekød",
+              "squash",
+              "løg",
+              "hakkede tomater",
+              "cheddar"
+            ]
+          },
+          {
+            "titel": "Gullash",
+            "url": "https://www.valdemarsro.dk/gullash/",
+            "score": 0.85,
+            "matchendeChunk": "fremgangsmaade",
+            "minutter": 30,
+            "portioner": 4,
+            "tags": [
+              "Simremad",
+              "Vinter",
+              "Familiefavoritter",
+              "Mormormad",
+              "Efterår",
+              "Gryderetter"
+            ],
+            "ingredienserPaaTilbud": [
+              "kartoffel",
+              "oksebov",
+              "mælk",
+              "tomatpuré",
+              "smør",
+              "gulerod",
+              "løg"
+            ]
+          },
+          {
+            "titel": "Kålfad med hakket oksekød",
+            "url": "https://www.valdemarsro.dk/kaalfad-med-hakket-oksekoed/",
+            "score": 0.856,
+            "matchendeChunk": "fremgangsmaade",
+            "minutter": 30,
+            "portioner": 4,
+            "tags": [
+              "Mad på budget",
+              "Børnenes livretter",
+              "Familiefavoritter",
+              "Nem Hverdagsmad"
+            ],
+            "ingredienserPaaTilbud": [
+              "spidskål",
+              "løg",
+              "gulerod",
+              "hakket oksekød",
+              "cheddar",
+              "squash"
+            ]
+          },
+          {
+            "titel": "Orientalsk risret med oksekød",
+            "url": "https://www.valdemarsro.dk/orientalsk-risret/",
+            "score": 0.838,
+            "matchendeChunk": "fremgangsmaade",
+            "minutter": 30,
+            "portioner": 4,
+            "tags": [
+              "Familiefavoritter",
+              "Nem Hverdagsmad",
+              "Børnenes livretter",
+              "Bålmad"
+            ],
+            "ingredienserPaaTilbud": [
+              "rød peberfrugt",
+              "gulerod",
+              "løg",
+              "ærter",
+              "squash",
+              "hakket oksekød"
+            ]
+          },
+          {
+            "titel": "Frikadeller med pandesauce, agurk og kartofler",
+            "url": "https://www.valdemarsro.dk/frikadeller-med-pandesauce/",
+            "score": 0.836,
+            "matchendeChunk": "profil",
+            "minutter": 45,
+            "portioner": 4,
+            "tags": [
+              "Nem Hverdagsmad",
+              "Mormormad",
+              "Familiefavoritter"
+            ],
+            "ingredienserPaaTilbud": [
+              "kartoffel",
+              "spidskål",
+              "mælk",
+              "løg",
+              "hakket svinekød",
+              "smør"
+            ]
+          },
+          {
+            "titel": "Mexi Tærte",
+            "url": "https://www.valdemarsro.dk/mexi-taerte/",
+            "score": 0.862,
+            "matchendeChunk": "fremgangsmaade",
+            "minutter": 45,
+            "portioner": 1,
+            "tags": [
+              "Madtærter",
+              "Franske retter",
+              "Nem Hverdagsmad"
+            ],
+            "ingredienserPaaTilbud": [
+              "hakkede tomater",
+              "smør",
+              "hytteost",
+              "cheddar",
+              "squash"
+            ]
+          },
+          {
+            "titel": "Chili con carne",
+            "url": "https://www.valdemarsro.dk/chili-con-carne/",
+            "score": 0.859,
+            "matchendeChunk": "fremgangsmaade",
+            "minutter": 20,
+            "portioner": 4,
+            "tags": [
+              "Mexicansk",
+              "Natmad",
+              "Børnenes livretter",
+              "Vinter",
+              "Efterår",
+              "Nem Hverdagsmad",
+              "Gryderetter",
+              "Bålmad",
+              "Familiefavoritter"
+            ],
+            "ingredienserPaaTilbud": [
+              "ris",
+              "løg",
+              "hakkede tomater",
+              "hakket oksekød",
+              "cheddar"
+            ]
+          },
+          {
+            "titel": "Kylling i cremet sennepssauce",
+            "url": "https://www.valdemarsro.dk/kylling-cremet-sennepssauce/",
+            "score": 0.851,
+            "matchendeChunk": "fremgangsmaade-2",
+            "minutter": 30,
+            "portioner": 4,
+            "tags": [
+              "Gryderetter",
+              "Festmad",
+              "Franske retter",
+              "Familiefavoritter",
+              "Nem Hverdagsmad",
+              "Efterår",
+              "Børnenes livretter"
+            ],
+            "ingredienserPaaTilbud": [
+              "hvidvin",
+              "bacon",
+              "løg",
+              "smør",
+              "kyllingebryst"
+            ]
+          },
+          {
+            "titel": "Bønnegryde",
+            "url": "https://www.valdemarsro.dk/boennegryde/",
+            "score": 0.85,
+            "matchendeChunk": "profil",
+            "minutter": 30,
+            "portioner": 4,
+            "tags": [
+              "Bålmad",
+              "Simremad",
+              "Mad på budget",
+              "One Pot retter",
+              "Mexicansk",
+              "Vegetar",
+              "Familiefavoritter",
+              "Gryderetter",
+              "Børnenes livretter",
+              "Nem Hverdagsmad"
+            ],
+            "ingredienserPaaTilbud": [
+              "squash",
+              "rød peberfrugt",
+              "avocado",
+              "hakkede tomater",
+              "løg"
+            ]
+          },
+          {
+            "titel": "Kylling med svampesauce",
+            "url": "https://www.valdemarsro.dk/kylling-med-svampesauce/",
+            "score": 0.847,
+            "matchendeChunk": "profil",
+            "minutter": 30,
+            "portioner": 4,
+            "tags": [
+              "Efterår",
+              "Vinter",
+              "Familiefavoritter"
+            ],
+            "ingredienserPaaTilbud": [
+              "løg",
+              "kyllingebryst",
+              "smør",
+              "hvidvin",
+              "kartoffel"
+            ]
+          },
+          {
+            "titel": "Fyldte peberfrugter med oksekød",
+            "url": "https://www.valdemarsro.dk/fyldte-peberfrugter-med-oksekoed/",
+            "score": 0.829,
+            "matchendeChunk": "fremgangsmaade",
+            "minutter": 30,
+            "portioner": 4,
+            "tags": [
+              "Mad på budget",
+              "Nem Hverdagsmad",
+              "Mormormad"
+            ],
+            "ingredienserPaaTilbud": [
+              "hakket oksekød",
+              "cheddar",
+              "rød peberfrugt",
+              "løg",
+              "squash"
+            ]
+          }
+        ],
+        "kilde": "Neo4j: vector index chunk_embedding (nomic-embed-text, cosine) + (Recipe)-[:HAS_TAG]->(Tag), Recipe.totalMinutes + aktive tilbud (Recipe)-[:USES]->(Ingredient)<-[:IS_A]-(Product)-[:ON_OFFER]->(Chain)",
+        "note": "Score er semantisk lighed (0–1), ikke en garanti for relevans. Link altid til url."
+      }
+    ]
+  }
+}
+Input
+{
+  "recipes": "https://www.valdemarsro.dk/boennegryde/, https://www.valdemarsro.dk/texmex-risret-med-oksekoed/, https://www.valdemarsro.dk/kylling-cremet-sennepssauce/, https://www.valdemarsro.dk/lasagne/, https://www.valdemarsro.dk/gullash/"
+}
+Output
+{
+  "executionId": "103",
+  "status": "success",
+  "data": {
+    "Formatér svar": [
+      {
+        "fundet": true,
+        "opskrifter": [
+          {
+            "opskrift": "Bønnegryde",
+            "url": "https://www.valdemarsro.dk/boennegryde/",
+            "ingredienser": 17,
+            "paaTilbud": [
+              {
+                "ingrediens": "avocado",
+                "linje": "1 avocado",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "Salling ØKO Avocadoer",
+                    "stoerrelse": "3 stk",
+                    "pris": 25,
+                    "normalpris": 32.02,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "hakkede tomater",
+                "linje": "400 g hakkede tomater på dåse",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "ØGO Hakkede tomater øko",
+                    "stoerrelse": "400 g",
+                    "pris": 6,
+                    "normalpris": 7.25,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "løg",
+                "linje": "3 løg, finthakkede",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "Salling ØKO Løg øko",
+                    "stoerrelse": "750 g",
+                    "pris": 10,
+                    "normalpris": 14.01,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "rød peberfrugt",
+                "linje": "1 rød peberfrugt, i tern",
+                "tilbud": [
+                  {
+                    "kaede": "Rema 1000",
+                    "produkt": "Rød Peber",
+                    "stoerrelse": "1 stk",
+                    "pris": 6,
+                    "normalpris": 9,
+                    "gyldigTil": "2026-11-07"
+                  },
+                  {
+                    "kaede": "SuperBrugsen",
+                    "produkt": "Rød Peber",
+                    "stoerrelse": null,
+                    "pris": 6,
+                    "normalpris": null,
+                    "gyldigTil": "2026-11-05"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "squash",
+                "linje": "1 squash, groftrevet",
+                "tilbud": [
+                  {
+                    "kaede": "SuperBrugsen",
+                    "produkt": "Änglamark Økologisk Hokkaido Græskar",
+                    "stoerrelse": null,
+                    "pris": 19,
+                    "normalpris": null,
+                    "gyldigTil": "2026-11-05"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "opskrift": "Gullash",
+            "url": "https://www.valdemarsro.dk/gullash/",
+            "ingredienser": 11,
+            "paaTilbud": [
+              {
+                "ingrediens": "gulerod",
+                "linje": "3 gulerødder, skåret i tern",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "Salling ØKO Gulerødder",
+                    "stoerrelse": "800 g",
+                    "pris": 15,
+                    "normalpris": 18,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "kartoffel",
+                "linje": "1 kg kartofler",
+                "tilbud": [
+                  {
+                    "kaede": "Rema 1000",
+                    "produkt": "Danmark Skrælle Kartofler Klasse 1",
+                    "stoerrelse": "2 kg",
+                    "pris": 12,
+                    "normalpris": 18,
+                    "gyldigTil": "2026-11-07"
+                  },
+                  {
+                    "kaede": "Netto",
+                    "produkt": "Harvest Best Petit kartofler",
+                    "stoerrelse": "425 g",
+                    "pris": 9,
+                    "normalpris": 9.5,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "løg",
+                "linje": "2 løg, finthakkede",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "Salling ØKO Løg øko",
+                    "stoerrelse": "750 g",
+                    "pris": 10,
+                    "normalpris": 14.01,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "mælk",
+                "linje": "1½ dl mælk",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "Sødmælk Laktosefri",
+                    "stoerrelse": "1 L",
+                    "pris": 12,
+                    "normalpris": 18.05,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "oksebov",
+                "linje": "500 g oksebov, skåret i tern af ca. 2x2 cm",
+                "tilbud": [
+                  {
+                    "kaede": "SuperBrugsen",
+                    "produkt": "Gammeldags Oksegrydesteg af Bov eller Tykkam",
+                    "stoerrelse": null,
+                    "pris": 79,
+                    "normalpris": null,
+                    "gyldigTil": "2026-11-05"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "smør",
+                "linje": "1 spsk smør, til stegning",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "AMA Let Smørbart 38%",
+                    "stoerrelse": "250 g",
+                    "pris": 17.95,
+                    "normalpris": null,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "smør",
+                "linje": "75 g smør",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "AMA Let Smørbart 38%",
+                    "stoerrelse": "250 g",
+                    "pris": 17.95,
+                    "normalpris": null,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "tomatpuré",
+                "linje": "100 g koncentreret tomatpuré",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "La Campagna Tomatkoncentrat",
+                    "stoerrelse": "140 g",
+                    "pris": 5,
+                    "normalpris": 6.25,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "opskrift": "Kylling i cremet sennepssauce",
+            "url": "https://www.valdemarsro.dk/kylling-cremet-sennepssauce/",
+            "ingredienser": 15,
+            "paaTilbud": [
+              {
+                "ingrediens": "bacon",
+                "linje": "75 g bacon, i skiver",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "ØGO Bacon i Tern Øko",
+                    "stoerrelse": "100 g",
+                    "pris": 20,
+                    "normalpris": 24.25,
+                    "gyldigTil": "2026-11-06"
+                  },
+                  {
+                    "kaede": "SuperBrugsen",
+                    "produkt": "Coop Bacon",
+                    "stoerrelse": null,
+                    "pris": 10,
+                    "normalpris": null,
+                    "gyldigTil": "2026-11-05"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "hvidvin",
+                "linje": "1 dl tør hvidvin",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "Stellenhof White Wine hvidvin",
+                    "stoerrelse": "3 L",
+                    "pris": 89,
+                    "normalpris": 104.99,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "kyllingebryst",
+                "linje": "600 g kyllingebryst",
+                "tilbud": [
+                  {
+                    "kaede": "SuperBrugsen",
+                    "produkt": "Coop Kyllingebryst",
+                    "stoerrelse": "1 kg",
+                    "pris": 25,
+                    "normalpris": null,
+                    "gyldigTil": "2026-11-05"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "løg",
+                "linje": "1 løg, finthakket",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "Salling ØKO Løg øko",
+                    "stoerrelse": "750 g",
+                    "pris": 10,
+                    "normalpris": 14.01,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "smør",
+                "linje": "25 g smør, til stegning",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "AMA Let Smørbart 38%",
+                    "stoerrelse": "250 g",
+                    "pris": 17.95,
+                    "normalpris": null,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "opskrift": "Lasagne",
+            "url": "https://www.valdemarsro.dk/lasagne/",
+            "ingredienser": 14,
+            "paaTilbud": [
+              {
+                "ingrediens": "gulerod",
+                "linje": "4 gulerødder, groftrevet",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "Salling ØKO Gulerødder",
+                    "stoerrelse": "800 g",
+                    "pris": 15,
+                    "normalpris": 18,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "hakkede tomater",
+                "linje": "800 g hakkede tomater på dåse",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "ØGO Hakkede tomater øko",
+                    "stoerrelse": "400 g",
+                    "pris": 6,
+                    "normalpris": 7.25,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "hakket oksekød",
+                "linje": "400 g hakket oksekød",
+                "tilbud": [
+                  {
+                    "kaede": "Rema 1000",
+                    "produkt": "HK. Oksekød 15-18%",
+                    "stoerrelse": "400 g",
+                    "pris": 35,
+                    "normalpris": 37.95,
+                    "gyldigTil": "2026-11-07"
+                  },
+                  {
+                    "kaede": "SuperBrugsen",
+                    "produkt": "Coop Hakket Oksekød 8-12%",
+                    "stoerrelse": "400 g",
+                    "pris": 39,
+                    "normalpris": null,
+                    "gyldigTil": "2026-11-05"
+                  },
+                  {
+                    "kaede": "Netto",
+                    "produkt": "ØGO Hakket oksekød 8-12% fedt økologisk",
+                    "stoerrelse": "400 g",
+                    "pris": 55,
+                    "normalpris": 62.95,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "løg",
+                "linje": "2 løg, finthakket",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "Salling ØKO Løg øko",
+                    "stoerrelse": "750 g",
+                    "pris": 10,
+                    "normalpris": 14.01,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "mozzarella",
+                "linje": "125 g frisk mozzarella",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "ØGO Mozzarella",
+                    "stoerrelse": "100 g",
+                    "pris": 10,
+                    "normalpris": 13.5,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "mozzarella",
+                "linje": "125 g frisk mozzarella",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "ØGO Mozzarella",
+                    "stoerrelse": "100 g",
+                    "pris": 10,
+                    "normalpris": 13.5,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "mælk",
+                "linje": "3 dl mælk",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "Sødmælk Laktosefri",
+                    "stoerrelse": "1 L",
+                    "pris": 12,
+                    "normalpris": 18.05,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "smør",
+                "linje": "2 spsk smør",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "AMA Let Smørbart 38%",
+                    "stoerrelse": "250 g",
+                    "pris": 17.95,
+                    "normalpris": null,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "squash",
+                "linje": "1 squash, groftrevet",
+                "tilbud": [
+                  {
+                    "kaede": "SuperBrugsen",
+                    "produkt": "Änglamark Økologisk Hokkaido Græskar",
+                    "stoerrelse": null,
+                    "pris": 19,
+                    "normalpris": null,
+                    "gyldigTil": "2026-11-05"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "tomatpuré",
+                "linje": "50 g koncentreret tomatpuré",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "La Campagna Tomatkoncentrat",
+                    "stoerrelse": "140 g",
+                    "pris": 5,
+                    "normalpris": 6.25,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "opskrift": "Texmex risret med oksekød",
+            "url": "https://www.valdemarsro.dk/texmex-risret-med-oksekoed/",
+            "ingredienser": 20,
+            "paaTilbud": [
+              {
+                "ingrediens": "avocado",
+                "linje": "1 avocado, skåret i tern",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "Salling ØKO Avocadoer",
+                    "stoerrelse": "3 stk",
+                    "pris": 25,
+                    "normalpris": 32.02,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "cheddar",
+                "linje": "125 g cheddar, friskrevet",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "ØGO Revet rød cheddar 34% fedt",
+                    "stoerrelse": "140 g",
+                    "pris": 20,
+                    "normalpris": 31,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "gulerod",
+                "linje": "1 gulerødder, groftrevet",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "Salling ØKO Gulerødder",
+                    "stoerrelse": "800 g",
+                    "pris": 15,
+                    "normalpris": 18,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "hakkede tomater",
+                "linje": "400 g hakkede tomater på dåse",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "ØGO Hakkede tomater øko",
+                    "stoerrelse": "400 g",
+                    "pris": 6,
+                    "normalpris": 7.25,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "hakket oksekød",
+                "linje": "400 g hakket oksekød",
+                "tilbud": [
+                  {
+                    "kaede": "Rema 1000",
+                    "produkt": "HK. Oksekød 15-18%",
+                    "stoerrelse": "400 g",
+                    "pris": 35,
+                    "normalpris": 37.95,
+                    "gyldigTil": "2026-11-07"
+                  },
+                  {
+                    "kaede": "SuperBrugsen",
+                    "produkt": "Coop Hakket Oksekød 8-12%",
+                    "stoerrelse": "400 g",
+                    "pris": 39,
+                    "normalpris": null,
+                    "gyldigTil": "2026-11-05"
+                  },
+                  {
+                    "kaede": "Netto",
+                    "produkt": "ØGO Hakket oksekød 8-12% fedt økologisk",
+                    "stoerrelse": "400 g",
+                    "pris": 55,
+                    "normalpris": 62.95,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "løg",
+                "linje": "1 løg, finthakket",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "Salling ØKO Løg øko",
+                    "stoerrelse": "750 g",
+                    "pris": 10,
+                    "normalpris": 14.01,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "sorte bønner",
+                "linje": "1 dåse sorte bønner",
+                "tilbud": [
+                  {
+                    "kaede": "Netto",
+                    "produkt": "ØGO Sorte Bønner Øko",
+                    "stoerrelse": "252 g",
+                    "pris": 6,
+                    "normalpris": 8.25,
+                    "gyldigTil": "2026-11-06"
+                  }
+                ]
+              },
+              {
+                "ingrediens": "squash",
+                "linje": "200 g squash, groftrevet",
+                "tilbud": [
+                  {
+                    "kaede": "SuperBrugsen",
+                    "produkt": "Änglamark Økologisk Hokkaido Græskar",
+                    "stoerrelse": null,
+                    "pris": 19,
+                    "normalpris": null,
+                    "gyldigTil": "2026-11-05"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "kaeder": [
+          {
+            "kaede": "Netto",
+            "slug": "netto",
+            "ingredienserPaaTilbud": 14,
+            "ingredienser": [
+              "avocado",
+              "hakkede tomater",
+              "løg",
+              "gulerod",
+              "kartoffel",
+              "mælk",
+              "smør",
+              "tomatpuré",
+              "bacon",
+              "hvidvin",
+              "hakket oksekød",
+              "mozzarella",
+              "cheddar",
+              "sorte bønner"
+            ],
+            "samletBesparelseKr": 68.02
+          },
+          {
+            "kaede": "Rema 1000",
+            "slug": "rema1000",
+            "ingredienserPaaTilbud": 3,
+            "ingredienser": [
+              "rød peberfrugt",
+              "kartoffel",
+              "hakket oksekød"
+            ],
+            "samletBesparelseKr": 11.95
+          },
+          {
+            "kaede": "SuperBrugsen",
+            "slug": "superbrugsen",
+            "ingredienserPaaTilbud": 6,
+            "ingredienser": [
+              "rød peberfrugt",
+              "squash",
+              "oksebov",
+              "bacon",
+              "kyllingebryst",
+              "hakket oksekød"
+            ],
+            "samletBesparelseKr": 0
+          }
+        ],
+        "anbefaling": "Handl i Netto: 14 ingrediens(er) på tilbud, ca. 68.02 kr sparet.",
+        "ekstraButik": "Ikke værd at tage en ekstra butik med (under 50 kr ekstra besparelse).",
+        "tilbudGyldigTil": "2026-11-05",
+        "kilde": "Prej API (hentet til Neo4j), (Recipe)-[:USES]->(Ingredient)<-[:IS_A]-(Product)-[:ON_OFFER]->(Chain). Priser er pr. pakke, ikke pr. opskriftsmængde. Basisvarer (salt, olie, krydderier) er ikke med."
+      }
+    ]
+  }
+}

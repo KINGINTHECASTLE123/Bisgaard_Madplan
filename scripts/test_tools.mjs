@@ -20,6 +20,11 @@ const CASES = {
     { query: 'varm suppe til en kold aften', tag: 'Vegetar', k: 3 },
     { query: 'mexicansk', excludeTag: 'Vegetar', maxMinutes: 30, k: 5 },
     { query: 'sushi', maxMinutes: 5 },
+    { query: 'en god hverdagsret', preferOffers: true, k: 5 },
+  ],
+  '13_tool_find_offers': [
+    { recipes: 'https://www.valdemarsro.dk/chili-con-carne/, Porresuppe, Lasagne' },
+    { recipes: 'pizza' },
   ],
   '12_tool_get_recipe_details': [{ recipe: 'Porresuppe' }, { recipe: 'https://www.valdemarsro.dk/lasagne/' }, { recipe: 'karry' }, { recipe: 'pizza' }],
 };

@@ -1,5 +1,5 @@
 // Tester om en Ollama-model kan lave tool calls via Ollamas OpenAI-kompatible API – uden n8n.
-// Kør:  node scripts/test_ollama_tools.mjs [model]      (standard: qwen3:14b)
+// Kør:  node scripts/ollama-eksperiment/test_ollama_tools.mjs [model]      (standard: qwen3:14b)
 const model = process.argv[2] || 'qwen3:14b';
 const BASE = 'http://localhost:11434/v1';
 const tools = [{

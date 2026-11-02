@@ -1,6 +1,6 @@
 # Agent-testprompts
 
-Prompts brugt til at teste Madplan-agenten under udviklingen, med resultat og vurdering.
+Prompts brugt til at teste Madplan-agenten under udviklingen, med resultat og vurdering. **De tre afleverede eksempler (med tool-kald og vurdering) står i `docs/eksempler.md`.**
 Model: Claude Haiku 5.5 (Agents builder, Anthropic-credential), medmindre andet står.
 
 ## T1 · 27/10 · "Hvilke vegetarretter har jeg?" (spike)
@@ -26,3 +26,8 @@ Model: Claude Haiku 5.5 (Agents builder, Anthropic-credential), medmindre andet 
 
 **Vurdering:** ✓ Vektor + graf i samme svar. Rigtig ret (højeste score i søgningen), ingredienser fra grafen inkl. sektion (tilbehør), bruger et tip om erstatning, linker til originalen uden at gengive fremgangsmåden, foreslår alternativer.
 **Begrænsning:** "45 min arbejdstid" mod "30 min i alt" er en datafejl på valdemarsro.dk (arbejdstid > tid i alt) – agenten gengiver kilden ukritisk. Samme fejl ses på Lasagne (40 min i alt, 180 min arbejdstid).
+
+## T3 · 2/11 · "Lav en madplan for 5 hverdage med én vegetardag. Max 45 minutter pr. ret. Hvor skal jeg handle?"
+
+Tools: `tool-search-recipes` ×2 (vegetar + kød, `preferOffers: true`) → `tool-find-offers`. ✓ 5 retter, én vegetardag, Netto anbefalet (14 ingredienser, 68 kr.), ingen ekstra butik.
+✗ Lasagne angivet som 40 min (kildedata: 180 min arbejdstid); SuperBrugsen får 0 kr. besparelse pga. manglende normalpriser. Fuld gennemgang: `docs/eksempler.md` (E3).

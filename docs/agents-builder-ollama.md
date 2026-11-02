@@ -9,7 +9,7 @@ og svarer med 6 vegetarretter + links. Kæden er:
 
 ```
 n8n Agents (OpenAI-provider, Responses API)
-  → scripts/ollama_proxy.mjs  (:11435, fjerner item_reference + logger)
+  → scripts/ollama-eksperiment/ollama_proxy.mjs  (:11435, fjerner item_reference + logger)
   → Ollama (:11434, /v1/responses)  → qwen3:14b
 ```
 
@@ -33,13 +33,13 @@ Valget af model afgøres i trin 5 med de rigtige test-prompts (fx en hel ugeplan
 | 2 | "Error creating agent: Instance AI is disabled" | I 2.36 krævede agenter n8n Assistant (instance-ai + sandbox) | Opgraderet n8n til 2.45.4 (afhængigheden er fjernet) |
 | 3 | Ollama findes ikke som provider | Agents builder har ingen Ollama-provider | OpenAI-credential med Base URL til Ollamas OpenAI-kompatible API, API key `ollama` |
 | 4 | Agenten "tænker" og svarer så intet | Instruktionerne nævnte tool'et som `opskrifter_med_tag`, men n8n giver det navnet **`tool-opskrifter-med-tag`** (workflow-navnet gjort maskinvenligt). Modellen kaldte et navn, der ikke fandtes, og Ollama smed kaldet væk → tomt svar | Instruktionerne bruger det præcise navn `tool-opskrifter-med-tag` + eksempel på argument |
-| 5 | Chat-fejl `input[2]: unknown input item type: "item_reference"` (kun med qwen3) | Efter tool-kaldet sender n8n modellens tidligere tænkning som `item_reference` (OpenAI-funktion). Ollama kender den ikke → HTTP 400 | `scripts/ollama_proxy.mjs` fjerner `item_reference`-elementer – eller brug en model uden thinking (`qwen2.5:7b`), så opstår problemet ikke |
+| 5 | Chat-fejl `input[2]: unknown input item type: "item_reference"` (kun med qwen3) | Efter tool-kaldet sender n8n modellens tidligere tænkning som `item_reference` (OpenAI-funktion). Ollama kender den ikke → HTTP 400 | `scripts/ollama-eksperiment/ollama_proxy.mjs` fjerner `item_reference`-elementer – eller brug en model uden thinking (`qwen2.5:7b`), så opstår problemet ikke |
 
 ## Sådan blev fejlen fundet
 
 1. Ollamas egen log (`~/.ollama/logs/server.log`) viste, at n8n kalder `POST /v1/responses` – og kun én gang pr. besked (dvs. agenten kom aldrig videre end første tur).
-2. `scripts/test_ollama_tools.mjs` viste, at `qwen3:14b` laver korrekte tool calls på både `/v1/chat/completions` og `/v1/responses` (med og uden streaming) → modellen og Ollama var ikke problemet.
-3. `scripts/ollama_proxy.mjs` logger hver request/svar mellem n8n og Ollama (`data/proxy-log/`). Her kunne man se tool-navnet (`tool-opskrifter-med-tag`), at modellens tænkning nævnte det forkerte navn, og senere den præcise 400-fejl.
+2. `scripts/ollama-eksperiment/test_ollama_tools.mjs` viste, at `qwen3:14b` laver korrekte tool calls på både `/v1/chat/completions` og `/v1/responses` (med og uden streaming) → modellen og Ollama var ikke problemet.
+3. `scripts/ollama-eksperiment/ollama_proxy.mjs` logger hver request/svar mellem n8n og Ollama (`data/proxy-log/`). Her kunne man se tool-navnet (`tool-opskrifter-med-tag`), at modellens tænkning nævnte det forkerte navn, og senere den præcise 400-fejl.
 
 ## Observationer til rapporten
 

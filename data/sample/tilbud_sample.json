@@ -1,0 +1,101 @@
+[
+  {
+    "ingrediens": "bacon",
+    "produkt": "Coop Bacon",
+    "stoerrelse": null,
+    "kaede": "SuperBrugsen",
+    "pris": 10,
+    "normalpris": null,
+    "gyldigTil": "2026-11-05"
+  },
+  {
+    "ingrediens": "bacon",
+    "produkt": "ØGO Bacon i Tern Øko",
+    "stoerrelse": "100 g",
+    "kaede": "Netto",
+    "pris": 20,
+    "normalpris": 24.25,
+    "gyldigTil": "2026-11-06"
+  },
+  {
+    "ingrediens": "bacon",
+    "produkt": "Irma Økologisk Tørsaltet Bacon i Skiver",
+    "stoerrelse": null,
+    "kaede": "SuperBrugsen",
+    "pris": 20,
+    "normalpris": null,
+    "gyldigTil": "2026-11-05"
+  },
+  {
+    "ingrediens": "bacon",
+    "produkt": "Tulip Bacon i tern",
+    "stoerrelse": "300 g",
+    "kaede": "Netto",
+    "pris": 25,
+    "normalpris": 31.95,
+    "gyldigTil": "2026-11-06"
+  },
+  {
+    "ingrediens": "bacon",
+    "produkt": "Tulip Bacon i Skiver 3-Pak",
+    "stoerrelse": "300 g",
+    "kaede": "Netto",
+    "pris": 25,
+    "normalpris": 31.95,
+    "gyldigTil": "2026-11-06"
+  },
+  {
+    "ingrediens": "hakkede tomater",
+    "produkt": "ØGO Hakkede tomater øko",
+    "stoerrelse": "400 g",
+    "kaede": "Netto",
+    "pris": 6,
+    "normalpris": 7.25,
+    "gyldigTil": "2026-11-06"
+  },
+  {
+    "ingrediens": "hakkede tomater",
+    "produkt": "Øgo hakkede tomater med urter øko",
+    "stoerrelse": "400 g",
+    "kaede": "Netto",
+    "pris": 6,
+    "normalpris": 8.75,
+    "gyldigTil": "2026-11-06"
+  },
+  {
+    "ingrediens": "hakket oksekød",
+    "produkt": "HK. Oksekød 15-18%",
+    "stoerrelse": "400 g",
+    "kaede": "Rema 1000",
+    "pris": 35,
+    "normalpris": 37.95,
+    "gyldigTil": "2026-11-07"
+  },
+  {
+    "ingrediens": "hakket oksekød",
+    "produkt": "Coop Hakket Oksekød 8-12%",
+    "stoerrelse": "400 g",
+    "kaede": "SuperBrugsen",
+    "pris": 39,
+    "normalpris": null,
+    "gyldigTil": "2026-11-05"
+  },
+  {
+    "ingrediens": "hakket oksekød",
+    "produkt": "ØGO Hakket oksekød 8-12% fedt økologisk",
+    "stoerrelse": "400 g",
+    "kaede": "Netto",
+    "pris": 55,
+    "normalpris": 62.95,
+    "gyldigTil": "2026-11-06"
+  },
+  {
+    "ingrediens": "løg",
+    "produkt": "Salling ØKO Løg øko",
+    "stoerrelse": "750 g",
+    "kaede": "Netto",
+    "pris": 10,
+    "normalpris": 14.01,
+    "gyldigTil": "2026-11-06"
+  }
+]

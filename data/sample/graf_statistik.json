@@ -1,0 +1,63 @@
+{
+  "eksporteret": "2026-11-02T23:24:26.093Z",
+  "noder": [
+    {
+      "type": "Product",
+      "antal": 505
+    },
+    {
+      "type": "Chunk",
+      "antal": 188
+    },
+    {
+      "type": "Ingredient",
+      "antal": 183
+    },
+    {
+      "type": "Recipe",
+      "antal": 46
+    },
+    {
+      "type": "Tag",
+      "antal": 37
+    },
+    {
+      "type": "Chain",
+      "antal": 3
+    },
+    {
+      "type": "Category",
+      "antal": 2
+    }
+  ],
+  "relationer": [
+    {
+      "relation": "USES",
+      "antal": 918
+    },
+    {
+      "relation": "ON_OFFER",
+      "antal": 509
+    },
+    {
+      "relation": "HAS_TAG",
+      "antal": 208
+    },
+    {
+      "relation": "CHUNK_OF",
+      "antal": 188
+    },
+    {
+      "relation": "IN_CATEGORY",
+      "antal": 46
+    },
+    {
+      "relation": "SEE_ALSO",
+      "antal": 45
+    },
+    {
+      "relation": "IS_A",
+      "antal": 41
+    }
+  ]
+}

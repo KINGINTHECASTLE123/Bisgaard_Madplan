@@ -60,3 +60,32 @@ Tvivlsomme blandt de godkendte (2/8): **flødeost med pikant → flødeost med h
 ### Samlet vurdering
 - LLM-normalisering af enkeltlinjer: høj kvalitet (~92–96 % i stikprøver), billig og hurtig.
 - LLM-synonymsammenlægning alene: ca. 65 % præcision. Med deterministisk kontrol: ingen kendte fejl slap igennem i v5-testene, men kontrollen er bevidst konservativ (fx afvises majskolbe → majs).
+
+# Evaluering af tilbud → ingrediens-matchningen (trin 3)
+
+Model: Claude Haiku 5.5, tvunget tool use, batches á 60 produkter; navne valideres mod ingredienslisten (kun ikke-basisvarer). Logik: `src/offers.js`. Test uden n8n og uden Prej-kald: `node scripts/offers_dev.mjs` (cache).
+
+## Kørsel 1 · cache 29/10 (Rema 1000 244, Netto 200, SuperBrugsen 2 tilbud)
+
+446 tilbud → 441 unikke produkter → **56 koblet** til 136 ingredienser, 0 afvist af valideringen, 8 Claude-kald, ≈ $0,006.
+Færdigretter og pålæg blev korrekt holdt ude (fx "Mou Kartoffel- og Porresuppe", "Aldoni Pizza m. champignon", spegepølser, leverpostej).
+
+Fejl/tvivlstilfælde (≈ 6 af 56 → præcision ≈ 89 %):
+
+| Produkt | Koblet til | Vurdering |
+|---|---|---|
+| Næmt Risengrød | ris | ✗ færdigret |
+| Rama Cremefine Madlavning 15% | cremefraiche | ✗ madlavningsfløde |
+| AMA Stege & Bage Margarine | smør | ✗ erstatning |
+| Cleasy Yoghurt naturel 0,1% | græsk yoghurt | ✗ forkert variant |
+| Salling Rødbeder Økologisk | syltet rødbede | ? sandsynligvis friske |
+| Harvest Best Helbladet Spinat | babyspinat | ? burde være spinat |
+
+**Rettelse (v2):** prompten fik netop disse eksempler (færdigvarer/erstatninger ≠ råvare; friske ≠ syltede).
+
+## Kørsel 2 · uge 45, hentet 2/11 (prompt v2) – skrevet til Neo4j
+
+Rema 1000 141, Netto 217, SuperBrugsen **151** tilbud (Coop-data er kommet siden 29/10) = 7 Prej-kald.
+509 tilbud → 505 produkter → **41 koblet**, 1 afvist (Rødkål – ingrediensen findes ikke i opskrifterne). ≈ $0,007.
+Aktive tilbud med kobling: Netto 20 ingredienser, SuperBrugsen 10, Rema 1000 5.
+Tvivlstilfælde: "COOP Finthakkede Tomater" → flåede tomater (burde være hakkede tomater), "AMA Let Smørbart" → smør (smørbar blanding), "Hokkaido Græskar" → squash (forkert grøntsag).

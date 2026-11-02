@@ -1,0 +1,199 @@
+# E2 · Tool-kald (kopieret fra n8n Agents builder → chat → "3 tool calls")
+# Spørgsmål: "Find noget cremet med kylling under 30 minutter, og fortæl mig hvilke ingredienser den bedste kræver."
+# Rækkefølge: 1) Anthropic.tool search  2) tool-search-recipes (execution 98)  3) tool-get-recipe-details (execution 99)
+
+Input
+{
+  "query": "tool-search-recipes opskrifter"
+}
+Output
+[
+  {
+    "type": "tool_reference",
+    "toolName": "tool-search-recipes"
+  },
+  {
+    "type": "tool_reference",
+    "toolName": "tool-get-recipe-details"
+  },
+  {
+    "type": "tool_reference",
+    "toolName": "tool-opskrifter-med-tag"
+  }
+]
+Input
+{
+  "query": "noget cremet med kylling",
+  "maxMinutes": 30,
+  "k": 5
+}
+Output
+{
+  "executionId": "98",
+  "status": "success",
+  "data": {
+    "Formatér svar": [
+      {
+        "query": "noget cremet med kylling",
+        "filtre": [
+          "maks. 30 min"
+        ],
+        "antal": 5,
+        "opskrifter": [
+          {
+            "titel": "Kylling i cremet sennepssauce",
+            "url": "https://www.valdemarsro.dk/kylling-cremet-sennepssauce/",
+            "score": 0.872,
+            "matchendeChunk": "tips",
+            "minutter": 30,
+            "portioner": 4,
+            "tags": [
+              "Gryderetter",
+              "Festmad",
+              "Franske retter",
+              "Familiefavoritter",
+              "Nem Hverdagsmad",
+              "Efterår",
+              "Børnenes livretter"
+            ],
+          },
+          {
+            "titel": "Kylling med svampesauce",
+            "url": "https://www.valdemarsro.dk/kylling-med-svampesauce/",
+            "score": 0.866,
+            "matchendeChunk": "fremgangsmaade",
+            "minutter": 30,
+            "portioner": 4,
+            "tags": [
+              "Efterår",
+              "Vinter",
+              "Familiefavoritter"
+            ],
+          },
+          {
+            "titel": "Gryderet med kylling",
+            "url": "https://www.valdemarsro.dk/gryderet-med-kylling/",
+            "score": 0.864,
+            "matchendeChunk": "fremgangsmaade",
+            "minutter": 30,
+            "portioner": 6,
+            "tags": [
+              "Vinter",
+              "Børnenes livretter",
+              "Efterår",
+              "Nem Hverdagsmad",
+              "Bålmad"
+            ],
+          },
+          {
+            "titel": "Kyllingefrikadeller",
+            "url": "https://www.valdemarsro.dk/kyllingefrikadeller/",
+            "score": 0.861,
+            "matchendeChunk": "tips",
+            "minutter": 30,
+            "portioner": 4,
+            "tags": [
+              "Hurtig aftensmad",
+              "Madpakker",
+              "Børnenes livretter",
+              "Buffet",
+              "Nem Hverdagsmad",
+              "Familiefavoritter"
+            ],
+          },
+          {
+            "titel": "Asiatisk kyllingebowl",
+            "url": "https://www.valdemarsro.dk/asiatisk-kyllingebowl/",
+            "score": 0.86,
+            "matchendeChunk": "fremgangsmaade-1",
+            "minutter": 30,
+            "portioner": 4,
+            "tags": [
+              "Nem Hverdagsmad",
+              "Asiatisk"
+            ],
+          }
+        ],
+        "kilde": "Neo4j: vector index chunk_embedding (nomic-embed-text, cosine) + (Recipe)-[:HAS_TAG]->(Tag), Recipe.totalMinutes",
+        "note": "Score er semantisk lighed (0–1), ikke en garanti for relevans. Link altid til url."
+      }
+    ]
+  }
+}
+Input
+{
+  "recipe": "https://www.valdemarsro.dk/kylling-cremet-sennepssauce/"
+}
+Output
+{
+  "executionId": "99",
+  "status": "success",
+  "data": {
+    "Formatér svar": [
+      {
+        "fundet": true,
+        "titel": "Kylling i cremet sennepssauce",
+        "url": "https://www.valdemarsro.dk/kylling-cremet-sennepssauce/",
+        "kategori": "Aftensmad",
+        "tags": [
+          "Gryderetter",
+          "Festmad",
+          "Franske retter",
+          "Familiefavoritter",
+          "Nem Hverdagsmad",
+          "Efterår",
+          "Børnenes livretter"
+        ],
+        "minutterIAlt": 30,
+        "arbejdstid": 45,
+        "portioner": 4,
+        "holdbarhed": null,
+        "kanFryses": null,
+        "ingredienser": [
+          "25 g hvedemel (stegt kyllingebryst)",
+          "600 g kyllingebryst (stegt kyllingebryst)",
+          "25 g smør, til stegning (stegt kyllingebryst)",
+          "1 spsk olivenolie, til stegning (stegt kyllingebryst)",
+          "salt og friskkværnet peber (stegt kyllingebryst)",
+          "75 g bacon, i skiver (cremet sennepssauce)",
+          "1 løg, finthakket (cremet sennepssauce)",
+          "1 fed hvidløg, presset (cremet sennepssauce)",
+          "2½ dl piskefløde (cremet sennepssauce)",
+          "1 spsk majsstivelse (cremet sennepssauce)",
+          "1 dl grøntsagsbouillon (cremet sennepssauce)",
+          "1 dl tør hvidvin (cremet sennepssauce)",
+          "2 spsk grov sennep (cremet sennepssauce)",
+          "1 spsk dijon sennep (cremet sennepssauce)",
+          "½ dl frisk estragon, finthakket (cremet sennepssauce)",
+          "salt og friskkværnet peber (cremet sennepssauce)",
+          "3 dl basmati ris, kogt efter anvisning på emballagen (til servering)",
+          "400 g haricots verts, fra frost (til servering)",
+          "½ øko citron (til servering)",
+          "1 spsk hampefrø (til servering)",
+          "1 tsk olivenolie (til servering)",
+          "salt og friskkværnet peber (til servering)"
+        ],
+        "tips": ["… udeladt i repoet"],
+        "relateredeOpskrifter": [
+          {
+            "titel": "Frikadeller med pandesauce, agurk og kartofler",
+            "url": "https://www.valdemarsro.dk/frikadeller-med-pandesauce/"
+          },
+          {
+            "titel": "Millionbøf",
+            "url": "https://www.valdemarsro.dk/millionboef/"
+          },
+          {
+            "titel": "Spaghetti Bolognese",
+            "url": "https://www.valdemarsro.dk/spaghetti-bolognese/"
+          },
+          {
+            "titel": "Lasagne",
+            "url": "https://www.valdemarsro.dk/lasagne/"
+          }
+        ],
+        "kilde": "Neo4j: Recipe + IN_CATEGORY, HAS_TAG, SEE_ALSO. Originalopskrift: https://www.valdemarsro.dk/kylling-cremet-sennepssauce/"
+      }
+    ]
+  }
+}

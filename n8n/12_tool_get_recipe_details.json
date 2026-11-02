@@ -8,7 +8,7 @@
         "width": 1000,
         "color": 5
       },
-      "id": "9d713fc5-aeab-4a1c-a827-6c9197f3de51",
+      "id": "20891ab2-d4f6-4d4f-ab05-5ad4de454946",
       "name": "Beskrivelse",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -29,7 +29,7 @@
           ]
         }
       },
-      "id": "6ac2fb69-8a5b-47a3-b1f8-c45371f234c1",
+      "id": "08c8d646-e7d6-4249-83b8-bdde18a9c618",
       "name": "Input",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
@@ -42,7 +42,7 @@
       "parameters": {
         "jsCode": "const input = $('Input').first().json;\nconst parameters = { recipe: input.recipe ?? '' };\nreturn [{ json: { body: { statements: [{ statement: \"WITH trim(coalesce($recipe, '')) AS q\\nMATCH (r:Recipe)\\nWHERE q <> '' AND (r.url = q OR toLower(r.title) CONTAINS toLower(q))\\nWITH r, q ORDER BY (r.url = q) DESC, (toLower(r.title) = toLower(q)) DESC, size(r.title) ASC\\nLIMIT 1\\nRETURN r.title AS titel, r.url AS url,\\n       COLLECT { MATCH (r)-[:IN_CATEGORY]->(c:Category) RETURN c.name }[0] AS kategori,\\n       COLLECT { MATCH (r)-[:HAS_TAG]->(t:Tag) RETURN t.name } AS tags,\\n       r.totalMinutes AS minutterIAlt, r.cookMinutes AS arbejdstid, r.servings AS portioner,\\n       r.shelfLife AS holdbarhed, r.freezable AS kanFryses,\\n       [i IN range(0, size(r.ingredientLines) - 1) |\\n         CASE WHEN r.ingredientSections[i] = '' THEN r.ingredientLines[i]\\n              ELSE r.ingredientLines[i] + ' (' + toLower(r.ingredientSections[i]) + ')' END] AS ingredienser,\\n       r.tips AS tips,\\n       COLLECT { MATCH (r)-[:SEE_ALSO]-(s:Recipe) RETURN DISTINCT s { titel: s.title, url: s.url } } AS relateredeOpskrifter\", parameters }] } } }];"
       },
-      "id": "e06cec3a-a4a5-4542-96aa-fb2d505b86a2",
+      "id": "698e2102-af90-4127-8d30-e45c58afe657",
       "name": "Byg Cypher",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -62,7 +62,7 @@
         "jsonBody": "={{ JSON.stringify($json.body) }}",
         "options": {}
       },
-      "id": "74f8fde9-7a9b-487d-ac46-9aa7c41606a3",
+      "id": "212f902b-6409-48f3-9b24-c9c6e272a714",
       "credentials": {
         "httpBasicAuth": {
           "id": "W2oqfWpLx0Y5eXtI",
@@ -81,7 +81,7 @@
       "parameters": {
         "jsCode": "const input = $('Input').first().json;\nconst res = $input.first().json;\nif (res.errors?.length) throw new Error(res.errors.map((e) => e.code + ': ' + e.message).join(' | '));\nconst r0 = res.results[0];\nconst rows = r0.data.map((d) => Object.fromEntries(r0.columns.map((c, i) => [c, d.row[i]])));\nif (!rows.length) {\n  return [{ json: { fundet: false, recipe: input.recipe,\n    note: 'Ingen opskrift i databasen matcher. Brug search_recipes til at finde den rigtige titel eller URL.' } }];\n}\nreturn [{ json: { fundet: true, ...rows[0],\n  kilde: 'Neo4j: Recipe + IN_CATEGORY, HAS_TAG, SEE_ALSO. Originalopskrift: ' + rows[0].url } }];"
       },
-      "id": "10915cad-31c4-4a3c-a425-9dc608db2c3d",
+      "id": "25aac322-acbd-4fea-968b-358b9676342d",
       "name": "Formatér svar",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,

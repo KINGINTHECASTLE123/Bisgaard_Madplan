@@ -8,7 +8,7 @@
         "width": 1000,
         "color": 5
       },
-      "id": "1464ab6c-eeef-43fe-ab7e-8b0e4fc11f60",
+      "id": "6bde3948-22af-4549-910f-12b56ea40149",
       "name": "Beskrivelse",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -29,7 +29,7 @@
           ]
         }
       },
-      "id": "08e98a70-b59e-4733-ae05-a68640508b40",
+      "id": "9d183cb3-817a-494d-b07c-7563f305c8f0",
       "name": "Input",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
@@ -42,7 +42,7 @@
       "parameters": {
         "jsCode": "const input = $('Input').first().json;\nconst parameters = { tag: input.tag ?? '' };\nreturn [{ json: { body: { statements: [{ statement: \"WITH trim(coalesce($tag, '')) AS tag\\nCALL (tag) {\\n  WITH tag WHERE tag <> ''\\n  MATCH (r:Recipe)-[:HAS_TAG]->(t:Tag) WHERE toLower(t.name) = toLower(tag)\\n  RETURN 'opskrift' AS kind, r.title AS name, r.totalMinutes AS minutes, r.url AS url\\n  UNION ALL\\n  WITH tag WHERE tag = ''\\n  MATCH (t:Tag)<-[:HAS_TAG]-(r:Recipe)\\n  RETURN 'tag' AS kind, t.name AS name, count(r) AS minutes, null AS url\\n}\\nRETURN kind, name, minutes, url ORDER BY kind, name\", parameters }] } } }];"
       },
-      "id": "f2282458-cd10-4668-92f3-9e0a5066ea80",
+      "id": "9f7b91fc-8a0a-40d8-9d6d-09119289fe11",
       "name": "Byg Cypher",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -62,7 +62,7 @@
         "jsonBody": "={{ JSON.stringify($json.body) }}",
         "options": {}
       },
-      "id": "3ad26b80-492c-40c5-b1cf-90dcf9307bb9",
+      "id": "ab22fb56-30e8-432d-ae01-2a0db57589c6",
       "credentials": {
         "httpBasicAuth": {
           "id": "W2oqfWpLx0Y5eXtI",
@@ -81,7 +81,7 @@
       "parameters": {
         "jsCode": "const input = $('Input').first().json;\nconst res = $input.first().json;\nif (res.errors?.length) throw new Error(res.errors.map((e) => e.code + ': ' + e.message).join(' | '));\nconst r0 = res.results[0];\nconst rows = r0.data.map((d) => Object.fromEntries(r0.columns.map((c, i) => [c, d.row[i]])));\nconst tag = input.tag ?? '';\nif (!tag.trim()) {\n  return [{ json: { tags: rows.map((r) => ({ tag: r.name, antalOpskrifter: r.minutes })) } }];\n}\nreturn [{ json: {\n  tag,\n  antal: rows.length,\n  opskrifter: rows.map((r) => ({ titel: r.name, minutter: r.minutes, url: r.url })),\n  kilde: 'Neo4j: (Recipe)-[:HAS_TAG]->(Tag)',\n  note: rows.length ? undefined : 'Ingen opskrifter med det tag. Kald med tomt tag for at se de tags, der findes.',\n} }];"
       },
-      "id": "a2efd3a3-cb63-4f42-bbd8-ed503f143e17",
+      "id": "8592ba6e-4be4-49c1-b816-83875584be6f",
       "name": "Formatér svar",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,

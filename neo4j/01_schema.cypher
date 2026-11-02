@@ -41,8 +41,4 @@ FOR (ch:Chain) REQUIRE ch.slug IS UNIQUE;
 CREATE CONSTRAINT product_id IF NOT EXISTS
 FOR (p:Product) REQUIRE p.id IS UNIQUE;
 
-// ---------- Brugerdata ----------
-CREATE CONSTRAINT mealplan_id IF NOT EXISTS
-FOR (m:MealPlan) REQUIRE m.id IS UNIQUE;
-
 SHOW INDEXES;

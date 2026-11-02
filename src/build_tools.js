@@ -142,13 +142,14 @@ return [{ json: {
       'Hybrid søgning: vektorsøgning på opskrifternes chunks (profil, ingredienser, tips, fremgangsmåde) med ' +
       '**nomic-embed-text**, samlet pr. opskrift (bedste chunk-score), kombineret med graf-filtre i samme Cypher-query.\n\n' +
       'Input: **query** (fri tekst, fx "noget cremet med kylling"), **maxMinutes** (valgfri, tal), **tag** (valgfri, et eller flere tags ' +
-      'adskilt af komma – opskriften skal have mindst ét, fx "Salat, Vegetar"), **excludeTag** (valgfri, komma-liste), **k** (antal, standard 5).\n' +
-      'Output: opskrifter med score, tid, tags, kort beskrivelse og URL (kilde) + hvilken chunk der matchede.',
+      'adskilt af komma – opskriften skal have mindst ét, fx "Salat, Vegetar"), **excludeTag** (valgfri, komma-liste), **preferOffers** (valgfri, true = sortér efter antal ingredienser på tilbud), **k** (antal, standard 5).\n' +
+      'Output: opskrifter med score, tid, tags, kort beskrivelse, URL (kilde), hvilken chunk der matchede og hvilke ingredienser der er på tilbud.',
     inputs: [
       { name: 'query', type: 'string' },
       { name: 'maxMinutes', type: 'number' },
       { name: 'tag', type: 'string' },
       { name: 'excludeTag', type: 'string' },
+      { name: 'preferOffers', type: 'boolean' },
       { name: 'k', type: 'number' },
     ],
     embedField: 'query',
@@ -162,8 +163,10 @@ WHERE ($maxMinutes IS NULL OR r.totalMinutes <= $maxMinutes)
 RETURN r.title AS titel, r.url AS url, round(best.score, 3) AS score, best.type AS matchendeChunk,
        r.totalMinutes AS minutter, r.servings AS portioner,
        COLLECT { MATCH (r)-[:HAS_TAG]->(t:Tag) RETURN t.name } AS tags,
-       left(r.description, 220) AS beskrivelse
-ORDER BY score DESC
+       left(r.description, 220) AS beskrivelse,
+       COLLECT { MATCH (r)-[:USES]->(i:Ingredient {pantry: false})<-[:IS_A]-(:Product)-[o:ON_OFFER]->(:Chain)
+                 WHERE o.validTo >= date() RETURN DISTINCT i.name } AS ingredienserPaaTilbud
+ORDER BY CASE WHEN $preferOffers THEN size(ingredienserPaaTilbud) ELSE 0 END DESC, score DESC
 LIMIT $k`,
     params: `{
   embedding,
@@ -171,18 +174,20 @@ LIMIT $k`,
   tags: String(input.tag || '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean),
   excludeTags: String(input.excludeTag || '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean),
   k: Math.min(Math.max(Math.round(Number(input.k) || 5), 1), 15),
+  preferOffers: input.preferOffers === true || input.preferOffers === 'true',
 }`,
     format: `const filtre = [
   Number(input.maxMinutes) > 0 && 'maks. ' + Number(input.maxMinutes) + ' min',
   String(input.tag || '').trim() && 'mindst ét af tags: ' + input.tag,
   String(input.excludeTag || '').trim() && 'uden tags: ' + input.excludeTag,
+  (input.preferOffers === true || input.preferOffers === 'true') && 'sorteret efter ingredienser på tilbud',
 ].filter(Boolean);
 return [{ json: {
   query: input.query,
   filtre: filtre.length ? filtre : 'ingen',
   antal: rows.length,
   opskrifter: rows,
-  kilde: 'Neo4j: vector index chunk_embedding (nomic-embed-text, cosine) + (Recipe)-[:HAS_TAG]->(Tag), Recipe.totalMinutes',
+  kilde: 'Neo4j: vector index chunk_embedding (nomic-embed-text, cosine) + (Recipe)-[:HAS_TAG]->(Tag), Recipe.totalMinutes + aktive tilbud (Recipe)-[:USES]->(Ingredient)<-[:IS_A]-(Product)-[:ON_OFFER]->(Chain)',
   note: rows.length
     ? 'Score er semantisk lighed (0–1), ikke en garanti for relevans. Link altid til url.'
     : 'Ingen opskrifter matchede filtrene. Prøv uden maxMinutes/tag.',
@@ -219,6 +224,82 @@ RETURN r.title AS titel, r.url AS url,
 }
 return [{ json: { fundet: true, ...rows[0],
   kilde: 'Neo4j: Recipe + IN_CATEGORY, HAS_TAG, SEE_ALSO. Originalopskrift: ' + rows[0].url } }];`,
+  }),
+
+  // ---------------------------------------------------------------- graf: tilbud på opskrifternes ingredienser
+  '13_tool_find_offers': toolWorkflow({
+    name: 'Tool · find_offers',
+    description:
+      'Graf-opslag: hvilke ingredienser i én eller flere opskrifter er på tilbud lige nu (Rema 1000, Netto, SuperBrugsen), ' +
+      'via (Recipe)-[:USES]->(Ingredient)<-[:IS_A]-(Product)-[:ON_OFFER]->(Chain). Udløbne tilbud ignoreres.\n' +
+      'Beregner besparelsen pr. kæde for HELE indkøbet og anbefaler én butik (Jacobs præference); en ekstra butik foreslås kun ved ≥ 50 kr. ekstra besparelse.\n\n' +
+      'Input: **recipes** (URL\'er eller titler adskilt af komma). Output: tilbud pr. opskrift + kædeoversigt + anbefaling, med tilbudsperiode (kilde: Prej).',
+    inputs: [{ name: 'recipes', type: 'string' }],
+    cypher: `WITH [x IN split(coalesce($recipes, ''), ',') | trim(x)] AS qs
+UNWIND qs AS q
+MATCH (r:Recipe) WHERE q <> '' AND (r.url = q OR toLower(r.title) CONTAINS toLower(q))
+WITH DISTINCT r
+MATCH (r)-[u:USES]->(i:Ingredient {pantry: false})
+OPTIONAL MATCH (i)<-[:IS_A]-(p:Product)-[o:ON_OFFER]->(ch:Chain) WHERE o.validTo >= date()
+WITH r, i, u, collect(CASE WHEN p IS NULL THEN null ELSE {
+  kaede: ch.slug, kaedeNavn: ch.name, produkt: p.name, stoerrelse: p.quantityLabel,
+  pris: o.price, normalpris: o.normalPrice, gyldigTil: toString(o.validTo)} END) AS tilbud
+RETURN r.title AS opskrift, r.url AS url, i.name AS ingrediens, u.raw AS linje, tilbud
+ORDER BY opskrift, ingrediens`,
+    params: `{ recipes: input.recipes ?? '' }`,
+    format: `if (!rows.length) {
+  return [{ json: { fundet: false, recipes: input.recipes,
+    note: 'Ingen af opskrifterne blev fundet. Brug url eller titel fra search_recipes.' } }];
+}
+const kr = (oere) => oere == null ? null : Math.round(oere) / 100;
+const opskrifter = {};
+const perKaede = {}; // kaede -> ingrediens -> billigste tilbud
+let gyldigTil = null;
+for (const r of rows) {
+  opskrifter[r.url] ??= { opskrift: r.opskrift, url: r.url, ingredienser: 0, paaTilbud: [] };
+  opskrifter[r.url].ingredienser++;
+  if (!r.tilbud.length) continue;
+  const best = {};
+  for (const t of r.tilbud) {
+    if (!best[t.kaede] || t.pris < best[t.kaede].pris) best[t.kaede] = t;
+    perKaede[t.kaede] ??= { navn: t.kaedeNavn, ingredienser: {} };
+    const cur = perKaede[t.kaede].ingredienser[r.ingrediens];
+    if (!cur || t.pris < cur.pris) perKaede[t.kaede].ingredienser[r.ingrediens] = t;
+    if (!gyldigTil || t.gyldigTil < gyldigTil) gyldigTil = t.gyldigTil;
+  }
+  opskrifter[r.url].paaTilbud.push({
+    ingrediens: r.ingrediens, linje: r.linje,
+    tilbud: Object.values(best).map((t) => ({ kaede: t.kaedeNavn, produkt: t.produkt, stoerrelse: t.stoerrelse,
+      pris: kr(t.pris), normalpris: kr(t.normalpris), gyldigTil: t.gyldigTil })),
+  });
+}
+const kaeder = Object.entries(perKaede).map(([slug, k]) => {
+  const items = Object.entries(k.ingredienser);
+  const besparelse = items.reduce((a, [, t]) => a + (t.normalpris ? t.normalpris - t.pris : 0), 0);
+  return { kaede: k.navn, slug, ingredienserPaaTilbud: items.length, ingredienser: items.map(([i]) => i),
+    samletBesparelseKr: kr(besparelse) };
+}).sort((a, b) => b.samletBesparelseKr - a.samletBesparelseKr || b.ingredienserPaaTilbud - a.ingredienserPaaTilbud);
+let anbefaling = 'Ingen ingredienser er på tilbud i Rema 1000, Netto eller SuperBrugsen lige nu.';
+let ekstraButik = null;
+if (kaeder.length) {
+  const b = kaeder[0];
+  anbefaling = 'Handl i ' + b.kaede + ': ' + b.ingredienserPaaTilbud + ' ingrediens(er) på tilbud, ca. ' + b.samletBesparelseKr + ' kr sparet.';
+  for (const k of kaeder.slice(1)) {
+    const ekstra = Object.entries(perKaede[k.slug].ingredienser)
+      .filter(([i]) => !perKaede[b.slug].ingredienser[i])
+      .reduce((a, [, t]) => a + (t.normalpris ? t.normalpris - t.pris : 0), 0);
+    if (ekstra >= 5000) { ekstraButik = 'Det kan betale sig også at handle i ' + k.kaede + ' (ca. ' + kr(ekstra) + ' kr ekstra besparelse).'; break; }
+  }
+}
+return [{ json: {
+  fundet: true,
+  opskrifter: Object.values(opskrifter),
+  kaeder,
+  anbefaling,
+  ekstraButik: ekstraButik || 'Ikke værd at tage en ekstra butik med (under 50 kr ekstra besparelse).',
+  tilbudGyldigTil: gyldigTil,
+  kilde: 'Prej API (hentet til Neo4j), (Recipe)-[:USES]->(Ingredient)<-[:IS_A]-(Product)-[:ON_OFFER]->(Chain). Priser er pr. pakke, ikke pr. opskriftsmængde. Basisvarer (salt, olie, krydderier) er ikke med.',
+} }];`,
   }),
 };
 

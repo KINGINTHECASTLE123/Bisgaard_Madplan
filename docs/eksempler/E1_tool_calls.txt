@@ -1,0 +1,42 @@
+# E1 · Tool-kald (kopieret fra n8n Agents builder → chat "Vegetarretter du kan lage")
+# Spørgsmål: "Hvilke vegetarretter har jeg?"
+# Rækkefølge: 1) Anthropic.tool search  2) tool-opskrifter-med-tag (execution 97)
+
+Input
+{
+  "query": "tool-opskrifter-med-tag",
+  "limit": 5
+}
+Output
+[
+  {
+    "type": "tool_reference",
+    "toolName": "tool-opskrifter-med-tag"
+  }
+]
+Input
+{
+  "tag": "Vegetar"
+}
+Output
+{
+  "executionId": "97",
+  "status": "success",
+  "data": {
+    "Formatér svar": [
+      {
+        "tag": "Vegetar",
+        "antal": 6,
+        "opskrifter": [
+          { "titel": "Bønnegryde", "minutter": 30, "url": "https://www.valdemarsro.dk/boennegryde/" },
+          { "titel": "Porresuppe", "minutter": 30, "url": "https://www.valdemarsro.dk/porresuppe/" },
+          { "titel": "Red Thai Curry", "minutter": 20, "url": "https://www.valdemarsro.dk/red-thai-curry/" },
+          { "titel": "Rösti med grønt og feta", "minutter": 30, "url": "https://www.valdemarsro.dk/rosti-med-groent/" },
+          { "titel": "Tex Mex Salat", "minutter": 20, "url": "https://www.valdemarsro.dk/tex-mex-salat/" },
+          { "titel": "Vodka Pasta", "minutter": 15, "url": "https://www.valdemarsro.dk/vodka-pasta/" }
+        ],
+        "kilde": "Neo4j: (Recipe)-[:HAS_TAG]->(Tag)"
+      }
+    ]
+  }
+}
