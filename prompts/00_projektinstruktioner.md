@@ -1,4 +1,4 @@
-> **Note (2/11):** Dette er de oprindelige projektinstruktioner fra projektstart (26/10). Enkelte rammer blev ændret undervejs – fx blev agentens model Claude Haiku i stedet for qwen3 (0 kr.-rammen blev et lille budget efter aftale med underviseren), og tilbud hentes med et script i stedet for et planlagt workflow. Se `docs/beslutninger.md`.
+> **Note (2/11):** Dette er de oprindelige projektinstruktioner fra projektstart (26/10). Enkelte rammer blev ændret undervejs – fx blev agentens model Claude Haiku i stedet for qwen3 (0 kr.-rammen blev et lille budget efter aftale med underviseren), og tilbud hentes med et script i stedet for et planlagt workflow. Se [`docs/beslutninger.md`](../docs/beslutninger.md).
 
 # Projektinstruktioner – Bisgaard_Madplan
 

@@ -1,7 +1,7 @@
 # Tre eksempelspørgsmål
 
-Agent: **Madplan-agent** i n8n Agents builder, model **Claude Haiku 5.5**, instruktioner i `agent/instructions.md`, tools i `agent/tools.md`.
-De rå tool-kald (input og output) er kopieret fra chatten til `docs/eksempler/E1–E3_tool_calls.txt`; E1 og E2 har også et screenshot i `docs/screenshots/`. De fulde svar og de hentede data er gengivet nedenfor.
+Agent: **Madplan-agent** i n8n Agents builder, model **Claude Haiku 5.5**, instruktioner i [`agent/instructions.md`](../agent/instructions.md), tools i [`agent/tools.md`](../agent/tools.md).
+De rå tool-kald (input og output) er kopieret fra chatten til `docs/eksempler/E1–E3_tool_calls.txt`; E1 og E2 har også et screenshot i [`docs/screenshots/`](../docs/screenshots/). De fulde svar og de hentede data er gengivet nedenfor.
 
 > **Om tool-kaldene:** Det første kald i hver session er `Anthropic.tool search` – Agents builder slår først de relevante tools op
 > (svaret er en liste af `tool_reference`). Derefter kommer de egentlige kald til vores workflow-tools. Hvert workflow-tool kører som en
@@ -11,7 +11,7 @@ De rå tool-kald (input og output) er kopieret fra chatten til `docs/eksempler/E
 
 ## E1 · Ren graf-forespørgsel: "Hvilke vegetarretter har jeg?"
 
-**Tool-kald** (rå input/output: `docs/eksempler/E1_tool_calls.txt`)
+**Tool-kald** (rå input/output: [`docs/eksempler/E1_tool_calls.txt`](../docs/eksempler/E1_tool_calls.txt))
 
 | # | Tool | Input | Execution |
 |---|---|---|---|
@@ -24,13 +24,13 @@ De rå tool-kald (input og output) er kopieret fra chatten til `docs/eksempler/E
 **Agentens svar:** "Du har 6 vegetarretter:" efterfulgt af de 6 retter med tid og link til valdemarsro.dk, og "Kilde: opskrifterne under tagget 'Vegetar' i din database."
 
 **Vurdering:** ✓ Korrekt og fuldstændigt – alle 6 opskrifter med tagget, ingen opfundne. Agenten valgte selv det rigtige tool og tag. Et rent graf-spørgsmål, som vektorsøgning ikke ville kunne besvare fuldstændigt ("alle" kræver en præcis relation, ikke lighed).
-*Screenshot:* `docs/screenshots/E1_vegetar.png` (tool-kald med input og starten af output).
+*Screenshot:* [`docs/screenshots/E1_vegetar.png`](../docs/screenshots/E1_vegetar.png) (tool-kald med input og starten af output).
 
 ---
 
 ## E2 · Vektor + graf: "Find noget cremet med kylling under 30 minutter, og fortæl mig hvilke ingredienser den bedste kræver."
 
-**Tool-kald** (rå input/output: `docs/eksempler/E2_tool_calls.txt`)
+**Tool-kald** (rå input/output: [`docs/eksempler/E2_tool_calls.txt`](../docs/eksempler/E2_tool_calls.txt))
 
 | # | Tool | Input | Execution |
 |---|---|---|---|
@@ -63,13 +63,13 @@ De rå tool-kald (input og output) er kopieret fra chatten til `docs/eksempler/E
 - ⚠ Alle 5 resultater ligger meget tæt (0,860–0,872) – vektorscoren skelner dårligt mellem kyllingeretter. "Kyllingefrikadeller" er næppe "cremet".
 - ⚠ "30 min i alt" men "45 min arbejdstid" er selvmodsigende. Fejlen ligger i kildedata (se E3).
 
-*Screenshot:* `docs/screenshots/E2_cremet_kylling.png` (spørgsmål og tool-kald med input).
+*Screenshot:* [`docs/screenshots/E2_cremet_kylling.png`](../docs/screenshots/E2_cremet_kylling.png) (spørgsmål og tool-kald med input).
 
 ---
 
 ## E3 · Madplan med tilbud – og fejl: "Lav en madplan for 5 hverdage med én vegetardag. Max 45 minutter pr. ret. Hvor skal jeg handle?"
 
-**Tool-kald** (rå input/output: `docs/eksempler/E3_tool_calls.txt`)
+**Tool-kald** (rå input/output: [`docs/eksempler/E3_tool_calls.txt`](../docs/eksempler/E3_tool_calls.txt))
 
 | # | Tool | Input | Execution |
 |---|---|---|---|
@@ -117,7 +117,7 @@ Anbefaling fra tool'et: "Handl i Netto: 14 ingrediens(er) på tilbud, ca. 68.02 
 - ✗ **Lasagnen tager ikke 40 minutter.** Valdemarsro angiver "tid i alt 40 min", men "arbejdstid 180 min" (sovsen simrer i timer). Filteret bruger `totalMinutes`, så kravet "max 45 minutter" brydes i praksis – og lasagnen ligger endda øverst, fordi den har flest ingredienser på tilbud. Fejlen stammer fra inkonsistente kildedata, og hverken tool eller agent opdager den. *Rettelse:* filtrér på `max(totalMinutes, cookMinutes)` og lad agenten advare, når tiderne er uenige.
 - ✗ **Anbefalingen er skæv mod Netto.** Prej har ingen normalpriser for SuperBrugsen, så dens besparelse bliver 0 kr., selvom fx kyllingebryst (1 kg, 25 kr.) og bacon (10 kr.) er billige. *Rettelse:* sammenlign tilbudspris med de andre kæders pris, når normalprisen mangler.
 - ⚠ **Besparelsen tæller hele pakker.** 3 liter hvidvin (16 kr. sparet) tæller med, selvom retten bruger 1 dl; tool'et siger det selv ("priser er pr. pakke"), men tallet 68 kr. er dermed for højt.
-- ⚠ **Matchfejl slår igennem:** "Änglamark Økologisk Hokkaido Græskar" vises som tilbud på *squash*, og "AMA Let Smørbart" som *smør* (se `docs/normalisering-evaluering.md`).
+- ⚠ **Matchfejl slår igennem:** "Änglamark Økologisk Hokkaido Græskar" vises som tilbud på *squash*, og "AMA Let Smørbart" som *smør* (se [`docs/normalisering-evaluering.md`](../docs/normalisering-evaluering.md)).
 - ⚠ Sproglig fejl i svaret ("En ekstra butik er ikke Der er ikke værd").
 
 *Tool-kaldene er dokumenteret i tekstfilen (svaret er for langt til et overskueligt screenshot).*
@@ -126,6 +126,6 @@ Anbefaling fra tool'et: "Handl i Netto: 14 ingrediens(er) på tilbud, ca. 68.02 
 
 ## Øvrige kendte begrænsninger (fra udviklingen)
 
-- **"Sundt"** kan ikke måles – der er ingen næringsdata. Agenten oversætter det til tags (Salat, Vegetar, bowls) og siger, at det er et skøn (`docs/retrieval-tests.md`).
-- **Tilbudsmatchning** er ca. 89 % præcis; enkelte produkter kobles forkert (fx Hokkaido-græskar → squash) (`docs/normalisering-evaluering.md`).
-- **Lokale modeller** (qwen2.5/qwen3 via Ollama) kunne lave simple tool-kald i Agents builder, men krævede workarounds og er usikre ved komplekse opgaver. Derfor Claude Haiku (`docs/agents-builder-ollama.md`).
+- **"Sundt"** kan ikke måles – der er ingen næringsdata. Agenten oversætter det til tags (Salat, Vegetar, bowls) og siger, at det er et skøn ([`docs/retrieval-tests.md`](../docs/retrieval-tests.md)).
+- **Tilbudsmatchning** er ca. 89 % præcis; enkelte produkter kobles forkert (fx Hokkaido-græskar → squash) ([`docs/normalisering-evaluering.md`](../docs/normalisering-evaluering.md)).
+- **Lokale modeller** (qwen2.5/qwen3 via Ollama) kunne lave simple tool-kald i Agents builder, men krævede workarounds og er usikre ved komplekse opgaver. Derfor Claude Haiku ([`docs/agents-builder-ollama.md`](../docs/agents-builder-ollama.md)).

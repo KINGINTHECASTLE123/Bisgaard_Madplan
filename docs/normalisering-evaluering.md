@@ -1,7 +1,7 @@
 # Evaluering af ingrediens-normaliseringen (trin 2)
 
-Model: Claude Haiku 5.5 via Anthropic Messages API, tvunget tool use (fast JSON-skema). Logik: `src/normalize.js`.
-Test uden n8n: `node scripts/normalize_dev.mjs` (resultater i `data/normalize/`, ikke i git).
+Model: Claude Haiku 5.5 via Anthropic Messages API, tvunget tool use (fast JSON-skema). Logik: [`src/normalize.js`](../src/normalize.js).
+Test uden n8n: `node scripts/normalize_dev.mjs` (resultater i [`data/normalize/`](../data/normalize/), ikke i git).
 
 ## Kørsel 1 · 3 opskrifter (prompt v1)
 
@@ -34,7 +34,7 @@ Også: `temperature: 0` afvises af Haiku 5.5 – ensartethed sikres af tool-skem
 
 **Præcision 11/17 ≈ 65 %.** Modellen brød prompten ("slå ikke forskellige varer sammen") – fx stødt koriander → koriander, som prompten nævnte eksplicit.
 
-**Rettelse (v3):** (1) prompten fik eksempler på netop disse fejl, (2) en **deterministisk kontrol** (`mergeAllowed` i `src/normalize.js`) afviser sammenlægninger, hvor ord som *stødt, tørret, syltede, flåede, røget, frisk* kun står på den ene side, og hvor forskellige pastaformer slås sammen. Kontrollen afviser alle 6 forkerte og godkender alle 11 rigtige.
+**Rettelse (v3):** (1) prompten fik eksempler på netop disse fejl, (2) en **deterministisk kontrol** (`mergeAllowed` i [`src/normalize.js`](../src/normalize.js)) afviser sammenlægninger, hvor ord som *stødt, tørret, syltede, flåede, røget, frisk* kun står på den ene side, og hvor forskellige pastaformer slås sammen. Kontrollen afviser alle 6 forkerte og godkender alle 11 rigtige.
 
 **Læring:** LLM'en er god til at strukturere enkelte linjer, men upålidelig til regler på tværs af en lang liste. Regler, der kan udtrykkes som kode, skal håndhæves i kode.
 
@@ -63,7 +63,7 @@ Tvivlsomme blandt de godkendte (2/8): **flødeost med pikant → flødeost med h
 
 # Evaluering af tilbud → ingrediens-matchningen (trin 3)
 
-Model: Claude Haiku 5.5, tvunget tool use, batches á 60 produkter; navne valideres mod ingredienslisten (kun ikke-basisvarer). Logik: `src/offers.js`. Test uden n8n og uden Prej-kald: `node scripts/offers_dev.mjs` (cache).
+Model: Claude Haiku 5.5, tvunget tool use, batches á 60 produkter; navne valideres mod ingredienslisten (kun ikke-basisvarer). Logik: [`src/offers.js`](../src/offers.js). Test uden n8n og uden Prej-kald: `node scripts/offers_dev.mjs` (cache).
 
 ## Kørsel 1 · cache 29/10 (Rema 1000 244, Netto 200, SuperBrugsen 2 tilbud)
 

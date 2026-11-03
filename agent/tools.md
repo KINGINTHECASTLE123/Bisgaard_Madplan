@@ -6,7 +6,7 @@ n8n's maskinnavn (workflow-navnet med små bogstaver og bindestreger), fx `tool-
 > Agents builder viser "This workflow has no defined inputs", selvom triggeren har inputs og er udgivet (n8n 2.45.4, Preview).
 > Derfor står input-felterne eksplicit i beskrivelsen, så modellen ved hvilke argumenter den skal sende.
 
-## tool-search-recipes · `n8n/11_tool_search_recipes.json` · vektor + graf (hybrid)
+## tool-search-recipes · [`n8n/11_tool_search_recipes.json`](../n8n/11_tool_search_recipes.json) · vektor + graf (hybrid)
 
 ```
 Søger i mine gemte opskrifter ud fra betydning (vektorsøgning) og kan filtrere på tid og tags i samme forespørgsel.
@@ -22,7 +22,7 @@ Returnerer opskrifter med titel, url (kilde), score (semantisk lighed 0–1), ti
 Eksempel: {"query": "god hverdagsmad", "maxMinutes": 30, "preferOffers": true, "k": 8}
 ```
 
-## tool-get-recipe-details · `n8n/12_tool_get_recipe_details.json` · graf
+## tool-get-recipe-details · [`n8n/12_tool_get_recipe_details.json`](../n8n/12_tool_get_recipe_details.json) · graf
 
 ```
 Henter alle fakta om én bestemt opskrift fra grafen: kategori, tags, ingredienser (med sektion, fx "til servering"), tid i alt, arbejdstid, portioner, holdbarhed, om den kan fryses, tips og relaterede opskrifter ("Prøv også").
@@ -33,7 +33,7 @@ Returnerer fakta + url (kilde). Fremgangsmåden returneres ikke – henvis til u
 Eksempel: {"recipe": "https://www.valdemarsro.dk/porresuppe/"}
 ```
 
-## tool-find-offers · `n8n/13_tool_find_offers.json` · graf (tilbud)
+## tool-find-offers · [`n8n/13_tool_find_offers.json`](../n8n/13_tool_find_offers.json) · graf (tilbud)
 
 ```
 Finder hvilke ingredienser i én eller flere opskrifter der er på tilbud lige nu i Rema 1000, Netto og SuperBrugsen, beregner besparelsen pr. butik for hele indkøbet og anbefaler én butik (en ekstra butik kun ved mindst 50 kr. ekstra besparelse).
@@ -44,7 +44,7 @@ Returnerer tilbud pr. opskrift (produkt, størrelse, pris, normalpris, gyldig ti
 Eksempel: {"recipes": "https://www.valdemarsro.dk/chili-con-carne/, https://www.valdemarsro.dk/porresuppe/"}
 ```
 
-## tool-opskrifter-med-tag · `n8n/10_tool_opskrifter_med_tag.json` · graf
+## tool-opskrifter-med-tag · [`n8n/10_tool_opskrifter_med_tag.json`](../n8n/10_tool_opskrifter_med_tag.json) · graf
 
 ```
 Finder alle opskrifter med et bestemt tag (fx "Vegetar", "Suppe", "Gryderetter"). Tomt tag giver en liste over alle tags med antal opskrifter.

@@ -5,7 +5,7 @@
 | Platform | n8n Agents builder (n8n 2.45.4, self-hosted) |
 | Model | **Claude Haiku 5.5** (`claude-haiku-5-5`) via Anthropic-credential |
 | Rolle | Personlig madplanlægger og opskriftsrådgiver |
-| Tools | `tool-search-recipes` (vektor + graf + tilbud), `tool-get-recipe-details` (graf), `tool-find-offers` (graf: tilbud), `tool-opskrifter-med-tag` (graf) – se `agent/tools.md` |
+| Tools | `tool-search-recipes` (vektor + graf + tilbud), `tool-get-recipe-details` (graf), `tool-find-offers` (graf: tilbud), `tool-opskrifter-med-tag` (graf) – se [`agent/tools.md`](../agent/tools.md) |
 | Skills | Ingen |
 | Hukommelse | Session memory (standard i Agents builder) |
 
